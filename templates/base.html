@@ -1,0 +1,177 @@
+{% load static site_tags %}<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>{% block title %}{{ hotel.name }} | Hotel in Enugu{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}Comfortable rooms and suites in Enugu, Nigeria. Relax at {{ hotel.name }} with all-day dining, a bar and a quiet spa. Book your stay today.{% endblock %}" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}" />
+    <meta name="theme-color" content="#16302A" />
+
+    <!-- Browser-tab icon (your leaf logo) -->
+    <link rel="icon" href="{% static 'img/favicon.svg' %}" type="image/svg+xml" />
+    <link rel="icon" href="{% static 'img/favicon.png' %}" type="image/png" sizes="192x192" />
+    <link rel="apple-touch-icon" href="{% static 'img/apple-touch-icon.png' %}" />
+
+    <!-- Link previews (WhatsApp, Facebook, LinkedIn, X) -->
+    {% site_image 'home_hero' 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=1200&q=80' as default_share_image %}
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="{{ hotel.name }}" />
+    <meta property="og:locale" content="en_NG" />
+    <meta property="og:url" content="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}" />
+    <meta property="og:image" content="{% block og_image %}{% if default_share_image|slice:':1' == '/' %}{{ request.scheme }}://{{ request.get_host }}{% endif %}{{ default_share_image }}{% endblock %}" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- Helps Google show your hotel in local results -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Hotel",
+        "name": "{{ hotel.name|escapejs }}",
+        "url": "{{ request.scheme }}://{{ request.get_host }}/",
+        "telephone": "{{ hotel.phone|escapejs }}",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "{{ hotel.address|escapejs }}",
+          "addressLocality": "Enugu",
+          "addressCountry": "NG"
+        },
+        "checkinTime": "{{ hotel.check_in_time|time:'H:i' }}",
+        "checkoutTime": "{{ hotel.check_out_time|time:'H:i' }}"
+      }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Tailwind CSS v4 (browser build). For production, switch to django-tailwind-cli. -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style type="text/tailwindcss">
+      @theme {
+        --font-outfit: "Outfit", sans-serif;
+        --font-montserrat: "Montserrat", sans-serif;
+        --font-raleway: "Raleway", sans-serif;
+        --font-display: "Fraunces", sans-serif;
+        --font-body: "Inter", sans-serif;
+        --color-haloColor: rgb(63 138 195);
+      }
+      @layer utilities {
+        .gold-text {
+          background: linear-gradient(100deg, #cba35c 0%, #f1dfae 35%, #c6a15b 60%, #a9813f 100%);
+          -webkit-background-clip: text;
+          background-clip: text;
+          color: transparent;
+        }
+        .gold-underline { position: relative; }
+        .gold-underline::after {
+          content: "";
+          position: absolute;
+          left: 0;
+          bottom: -3px;
+          width: 0;
+          height: 1px;
+          background: #c6a15b;
+          transition: width 300ms ease;
+        }
+        .gold-underline:hover::after { width: 100%; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        {% block extra_css %}{% endblock %}
+      }
+    </style>
+  </head>
+  <body class="font-body {% block body_bg %}bg-white{% endblock %} text-[#241F18] antialiased{% block body_extra %}{% endblock %}">
+    <header
+      data-nav="{% if nav_overlay %}overlay{% else %}solid{% endif %}"
+      class="fixed top-0 inset-x-0 z-40 transition-colors duration-300 {% if nav_overlay %}bg-transparent{% else %}bg-white/95 backdrop-blur{% endif %}"
+    >
+      <div class="max-w-7xl mx-auto px-6 md:px-10 flex items-center justify-between h-20">
+        <a
+          href="{% url 'home' %}"
+          data-nav-logo
+          class="flex items-center gap-2 font-fraunces text-xl tracking-tight {% if nav_overlay %}text-white{% else %}text-[#16302A]{% endif %}"
+        >
+          <img src={% static 'img/favicon.svg' %} alt={{ hotel.name }} class="w-9 h-9">
+          White Leaf
+        </a>
+        <nav
+          data-nav-links
+          class="hidden md:flex items-center gap-9 text-sm font-medium {% if nav_overlay %}text-white/90{% else %}text-[#3a352c]{% endif %}"
+        >
+          {% for key, label, url_name, active in nav_links %}{% if active %}<a href="{% url url_name %}" class="font-medium"
+            ><span class="flex flex-col items-center"
+              >{{ label }}<span class="block h-px w-full bg-[#c6a15b] mt-1"></span></span
+          ></a>{% else %}<a href="{% url url_name %}" class="gold-underline"
+            ><span class="flex flex-col items-center">{{ label }}</span></a
+          >{% endif %}{% endfor %}
+        </nav>
+        <button id="menu-btn" data-nav-btn class="md:hidden {% if nav_overlay %}text-white{% else %}text-[#16302A]{% endif %}" aria-label="Toggle menu">
+          <i data-lucide="menu" class="w-6 h-6" id="menu-icon"></i>
+        </button>
+      </div>
+      <div
+        id="mobile-menu"
+        class="hidden md:hidden bg-[#FAF6EE] border-t border-[#e7dfcd] px-6 py-5 flex-col gap-4 text-[#3a352c]"
+      >
+        {% for key, label, url_name, active in nav_links %}<a href="{% url url_name %}">{{ label }}</a>{% endfor %}
+        <a href="{% url 'contact' %}" class="bg-[#16302A] text-white text-center rounded-full py-2.5">Book a stay</a>
+      </div>
+    </header>
+
+    {% block content %}{% endblock %}
+
+    <footer class="bg-[#FAF6EE] border-t border-[#e7dfcd]{% block footer_extra %}{% endblock %}">
+      <div class="max-w-7xl mx-auto px-6 md:px-10 py-14 grid md:grid-cols-2 gap-10">
+        <div>
+          <div class="flex items-center gap-2.5">
+            <img src={% static 'img/favicon.svg' %} alt={{ hotel.name }} class="w-9 h-9">
+
+            <span class="font-display text-lg">White Leaf</span>
+          </div>
+          <div class="flex gap-14 mt-6">
+            <div>
+              <p class="text-xs text-[#8a8171] mb-1.5">Address</p>
+              <p class="text-sm text-[#3a352c] max-w-[180px]">{{ hotel.address }}</p>
+            </div>
+            <div>
+              <p class="text-xs text-[#8a8171] mb-1.5">Phone number</p>
+              <p class="text-sm text-[#3a352c]">{{ hotel.phone }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="flex flex-col items-start md:items-end justify-between gap-4">
+          <p class="font-display text-2xl md:text-right max-w-xs">Find out the best stay at White Leaf</p>
+          <a
+            href="{% url 'rooms:list' %}"
+            class="inline-flex w-fit items-center gap-3 bg-[#16302A] text-white text-sm font-medium pl-5 pr-2 py-2 rounded-full hover:bg-[#1F4A3D] transition-colors"
+            >View rooms<span class="w-6 h-6 rounded-full bg-white/15 flex items-center justify-center"
+              ><i data-lucide="arrow-right" class="w-3.5 h-3.5"></i></span
+          ></a>
+        </div>
+      </div>
+      <div class="border-t border-[#e7dfcd] py-5">
+        <div class="max-w-7xl mx-auto px-6 md:px-10 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-[#a49b89]">
+          <p>© {% now "Y" %} {{ hotel.name }}</p>
+          <div class="flex flex-wrap justify-center gap-x-6 gap-y-2">
+            <a href="{% url 'home' %}" class="hover:text-[#3a352c] transition-colors">Home</a
+            ><a href="{% url 'rooms:list' %}" class="hover:text-[#3a352c] transition-colors">Accommodations</a
+            ><a href="{% url 'tariffs' %}" class="hover:text-[#3a352c] transition-colors">Tariffs</a
+            ><a href="{% url 'about' %}" class="hover:text-[#3a352c] transition-colors">About</a
+            ><a href="{% url 'contact' %}" class="hover:text-[#3a352c] transition-colors">Contact &amp; Booking</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script src="https://unpkg.com/lucide@0.383.0/dist/umd/lucide.min.js"></script>
+    <script src="{% static 'js/site.js' %}"></script>
+    {% block scripts %}{% endblock %}
+    <script>
+      lucide.createIcons();
+    </script>
+  </body>
+</html>

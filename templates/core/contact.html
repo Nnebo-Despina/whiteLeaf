@@ -1,0 +1,410 @@
+{% extends "base.html" %}
+{% load static site_tags humanize %}
+{% block title %}Contact & Booking | {{ hotel.name }}{% endblock %}
+{% block meta_description %}Call, message or visit {{ hotel.name }} in Enugu. Find our address, opening hours and map, or leave a review of your stay.{% endblock %}
+{% block body_bg %}bg-white{% endblock %}
+{% block content %}
+
+    <div class="h-20"></div>
+
+    <div class="max-w-7xl mx-auto px-6 md:px-10 pt-14 pb-12"><h1 class="font-display text-5xl">Contact us</h1></div>
+
+    <div class="max-w-7xl mx-auto px-6 md:px-10 grid grid-cols-1 sm:grid-cols-3 gap-10 pb-16">
+      <div class="text-center">
+        <div class="w-14 h-14 rounded-full bg-[#F2EFE5] flex items-center justify-center mx-auto mb-4">
+          <i data-lucide="phone" class="w-5 h-5 text-[#16302A]" stroke-width="1.6"></i>
+        </div>
+        <p class="font-medium mb-2">Call & WhatsApp</p>
+        <p class="text-sm text-[#5a5347]">{{ hotel.phone }}</p>
+        {% if hotel.phone_secondary %}<p class="text-sm text-[#5a5347]">{{ hotel.phone_secondary }}</p>{% endif %}
+      </div>
+      <div class="text-center">
+        <div class="w-14 h-14 rounded-full bg-[#F2EFE5] flex items-center justify-center mx-auto mb-4">
+          <i data-lucide="clock" class="w-5 h-5 text-[#16302A]" stroke-width="1.6"></i>
+        </div>
+        <p class="font-medium mb-2">Working hours</p>
+        <p class="text-sm text-[#5a5347]">{{ hotel.opening_hours }}</p>
+      </div>
+      <div class="text-center">
+        <div class="w-14 h-14 rounded-full bg-[#F2EFE5] flex items-center justify-center mx-auto mb-4">
+          <i data-lucide="map-pin" class="w-5 h-5 text-[#16302A]" stroke-width="1.6"></i>
+        </div>
+        <p class="font-medium mb-2">Visit us</p>
+        <p class="text-sm text-[#5a5347] max-w-[220px] mx-auto">{{ hotel.address }}</p>
+      </div>
+    </div>
+
+    <!-- Map: embed needs no API key. For a pin on the exact hotel listing, open it on
+     Google Maps > Share > Embed a map, and paste that iframe's src below. -->
+    <section id="map" class="max-w-7xl mx-auto px-6 md:px-10 pb-16">
+      <div class="relative overflow-hidden rounded-3xl border border-[#e7dfcd] bg-[#F2EFE5]">
+        <iframe
+          title="White Leaf Hotel & Suites on Google Maps"
+          src="{% if hotel.map_embed_url %}{{ hotel.map_embed_url }}{% else %}https://www.google.com/maps?q={{ hotel.address|urlencode }}&output=embed{% endif %}"
+          class="block h-[24rem] w-full md:h-[30rem]"
+          style="border: 0"
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+          allowfullscreen
+        ></iframe>
+
+        <!-- Info card: floats over the map on desktop, stacks underneath on mobile -->
+        <div
+          class="border-t border-[#e7dfcd] bg-white p-6 md:absolute md:left-8 md:top-8 md:w-80 md:rounded-2xl md:border md:shadow-[0_12px_40px_rgba(22,48,42,0.14)]"
+        >
+          <div class="mb-4 h-px w-10 bg-[#c6a15b]"></div>
+          <p class="mb-2 text-xs font-medium tracking-[0.2em] text-[#a9813f]">FIND US</p>
+          <h3 class="font-display text-2xl leading-tight">{{ hotel.name }}</h3>
+          <div class="mt-4 space-y-3 text-sm text-[#5a5347]">
+            <p class="flex items-start gap-3">
+              <i data-lucide="map-pin" class="mt-0.5 h-4 w-4 shrink-0 text-[#16302A]"></i
+              ><span>{{ hotel.address }}</span>
+            </p>
+            <p class="flex items-center gap-3">
+              <i data-lucide="clock" class="h-4 w-4 shrink-0 text-[#16302A]"></i>{{ hotel.opening_hours }}
+            </p>
+          </div>
+          <a
+            href="{% if hotel.directions_url %}{{ hotel.directions_url }}{% else %}https://www.google.com/maps/dir/?api=1&destination={{ hotel.address|urlencode }}{% endif %}"
+            target="_blank"
+            rel="noopener"
+            class="mt-6 inline-flex items-center gap-3 rounded-full bg-[#16302A] py-2 pl-5 pr-2 text-sm font-medium text-white transition-colors hover:bg-[#1F4A3D]"
+          >
+            Get directions
+            <span class="flex h-6 w-6 items-center justify-center rounded-full bg-white/15"
+              ><i data-lucide="arrow-up-right" class="h-3.5 w-3.5"></i
+            ></span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <div class="max-w-7xl mx-auto px-6 md:px-10 pb-16">
+      <div class="bg-[#F2EFE5] rounded-2xl p-8 md:p-10 grid md:grid-cols-[1fr_1fr] gap-8 items-center">
+        <div>
+          <span class="inline-block bg-white text-[#8a8171] text-xs px-3 py-1 rounded-full mb-5">Start now</span>
+          <h2 class="font-display text-3xl leading-tight">
+            Plan your best stay <span class="block font-semibold">here at White Leaf</span>
+          </h2>
+          <p class="mt-4 text-[#5a5347] text-sm leading-relaxed max-w-xs">
+            Reach out with your dates and we'll hold the room that fits — no back and forth required.
+          </p>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <img
+            src="{% site_image 'contact_cta_1' 'https://images.unsplash.com/photo-1618221469555-7f3ad97540d6?auto=format&fit=crop&w=500&q=80' %}"
+            alt="Hotel lounge"
+            class="rounded-xl w-full h-64 object-cover"
+          />
+          <img
+            src="{% site_image 'contact_cta_2' 'https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=500&q=80' %}"
+            alt="Suite bedroom"
+            class="rounded-xl w-full h-64 object-cover"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- =========================================================
+     Guest reviews — full-width split card.
+     Left: dark brand panel that introduces the section.
+     Right: the form. Sits last, just above the footer.
+========================================================== -->
+    <section id="leave-review" class="max-w-7xl mx-auto px-6 md:px-10 pb-20">
+      <div
+        class="grid overflow-hidden rounded-3xl border border-[#e7dfcd] shadow-[0_1px_2px_rgba(22,48,42,0.04)] lg:grid-cols-[5fr_7fr]"
+      >
+        <!-- Intro panel -->
+        <div class="relative flex flex-col justify-between gap-12 overflow-hidden bg-[#16302A] p-8 text-white md:p-12">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden="true"
+            class="pointer-events-none absolute -bottom-12 -right-12 h-80 w-80 text-white/[0.06]"
+          >
+            <path
+              d="M4 20c8-1 14-7 15-15-8 1-14 7-15 15Z"
+              stroke="currentColor"
+              stroke-width=".5"
+              stroke-linejoin="round"
+            />
+            <path d="M6 18c3-4 7-8 12-11" stroke="currentColor" stroke-width=".5" />
+          </svg>
+
+          <div class="relative">
+            <div class="mb-5 h-px w-10 bg-[#c6a15b]"></div>
+            <p class="mb-3 text-xs font-medium tracking-[0.2em] text-[#c6a15b]">GUEST REVIEWS</p>
+            <h2 class="font-display text-3xl leading-tight md:text-4xl">
+              Stayed with us? <span class="block text-white/65">Tell us how it went.</span>
+            </h2>
+            <p class="mt-5 max-w-sm text-sm leading-relaxed text-white/70">
+              The good, the room number, the thing we should fix — every review is read by our team.
+            </p>
+          </div>
+
+          <ul class="relative space-y-4 text-sm text-white/80">
+            <li class="flex items-center gap-3">
+              <span class="flex h-9 w-9 items-center justify-center rounded-full bg-white/10"
+                ><i data-lucide="clock" class="h-4 w-4"></i></span
+              >Takes about a minute
+            </li>
+            <li class="flex items-center gap-3">
+              <span class="flex h-9 w-9 items-center justify-center rounded-full bg-white/10"
+                ><i data-lucide="message-square" class="h-4 w-4"></i></span
+              >Read by our team, not a bot
+            </li>
+            <li class="flex items-center gap-3">
+              <span class="flex h-9 w-9 items-center justify-center rounded-full bg-white/10"
+                ><i data-lucide="shield-check" class="h-4 w-4"></i></span
+              >Shown on the site after a quick check
+            </li>
+          </ul>
+        </div>
+
+        <!-- Form panel -->
+        <div class="flex min-h-[28rem] flex-col justify-center bg-white p-8 md:p-12">
+          <!-- Success state -->
+          <div id="review-done" role="status" class="hidden flex-col items-center py-6 text-center">
+            <div class="mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-[#16302A]">
+              <i data-lucide="check" class="h-6 w-6 text-white" stroke-width="2.4"></i>
+            </div>
+            <h3 class="font-display text-2xl">Thank you, <span id="done-name"></span></h3>
+            <p class="mt-2 max-w-xs text-sm text-[#8a8171]">
+              Your review is in — it'll appear on the site once our team has had a quick look.
+            </p>
+            <button
+              id="another"
+              type="button"
+              class="mt-7 text-sm font-medium text-[#16302A] underline decoration-[#c6a15b] underline-offset-4"
+            >
+              Leave another review
+            </button>
+          </div>
+
+          <!-- Form -->
+          <form id="review-form" novalidate data-url="{% url 'reviews:submit' %}">
+            {% csrf_token %}
+            <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" class="absolute -left-[9999px] h-0 w-0 opacity-0" />
+            <!-- Rating first: it's the quickest input and sets the tone -->
+            <div class="mb-9">
+              <p class="mb-3 text-sm font-medium text-[#3a352c]" id="rating-title">How was your stay?</p>
+              <div class="flex items-center gap-3">
+                <div id="stars" class="-ml-1 flex" role="group" aria-labelledby="rating-title"></div>
+                <span id="rating-label" class="min-w-[5.5rem] text-sm font-medium text-[#a9813f]"></span>
+              </div>
+              <p id="err-rating" class="mt-1.5 hidden text-xs text-[#b3573a]">Pick a star rating.</p>
+            </div>
+
+            <!-- Review -->
+            <div class="relative mb-2">
+              <textarea
+                id="review"
+                name="body"
+                maxlength="400"
+                rows="4"
+                placeholder=" "
+                class="peer w-full resize-none border-b border-[#d9d0b8] bg-transparent pb-2 pt-6 text-[15px] outline-none transition-colors focus:border-[#16302A]"
+              ></textarea>
+              <label
+                for="review"
+                class="pointer-events-none absolute left-0 top-6 text-[15px] text-[#8a8171] transition-all duration-200 peer-focus:top-0 peer-focus:text-xs peer-focus:text-[#16302A] peer-[:not(:placeholder-shown)]:top-0 peer-[:not(:placeholder-shown)]:text-xs"
+                >Your review</label
+              >
+            </div>
+            <div class="mb-8 flex items-start justify-between gap-4">
+              <p id="err-review" class="hidden text-xs text-[#b3573a]">A sentence or two is plenty.</p>
+              <span id="counter" class="ml-auto text-xs text-[#b3aa91]">0/400</span>
+            </div>
+
+            <!-- Name -->
+            <div class="relative mb-10">
+              <input
+                id="name"
+                name="display_name"
+                placeholder=" "
+                autocomplete="given-name"
+                class="peer w-full border-b border-[#d9d0b8] bg-transparent pb-2 pt-6 text-[15px] outline-none transition-colors focus:border-[#16302A]"
+              />
+              <label
+                for="name"
+                class="pointer-events-none absolute left-0 top-6 text-[15px] text-[#8a8171] transition-all duration-200 peer-focus:top-0 peer-focus:text-xs peer-focus:text-[#16302A] peer-[:not(:placeholder-shown)]:top-0 peer-[:not(:placeholder-shown)]:text-xs"
+                >Your name</label
+              >
+              <p id="err-name" class="mt-1.5 hidden text-xs text-[#b3573a]">Add your name so we know who to thank.</p>
+            </div>
+
+            <p id="err-server" class="mb-4 hidden text-xs text-[#b3573a]">Something went wrong. Please try again.</p>
+            <button
+              id="submit"
+              type="submit"
+              class="inline-flex items-center gap-3 rounded-full bg-[#16302A] py-2 pl-5 pr-2 text-sm font-medium text-white transition-colors hover:bg-[#1F4A3D] disabled:opacity-70"
+            >
+              <span id="submit-label">Submit review</span>
+              <span id="submit-icon" class="flex h-6 w-6 items-center justify-center rounded-full bg-white/15"
+                ><i data-lucide="arrow-right" class="h-3.5 w-3.5"></i
+              ></span>
+            </button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    
+{% endblock %}
+{% block scripts %}
+<script>
+      (function () {
+        var LABELS = ["Poor", "Fair", "Good", "Very good", "Excellent"];
+        var MAX = 400;
+        var rating = 0,
+          hover = 0,
+          touched = false,
+          submitting = false;
+
+        var form = document.getElementById("review-form");
+        var done = document.getElementById("review-done");
+        var nameEl = document.getElementById("name");
+        var reviewEl = document.getElementById("review");
+        var counter = document.getElementById("counter");
+        var starsEl = document.getElementById("stars");
+        var ratingLabel = document.getElementById("rating-label");
+
+        var STAR_MARKUP =
+          '<svg viewBox="0 0 24 24" class="w-9 h-9 transition-colors text-[#e2dcc8]" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+          '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
+        var starBtns = [];
+
+        function buildStars() {
+          for (var n = 1; n <= 5; n++) {
+            (function (n) {
+              var b = document.createElement("button");
+              b.type = "button";
+              b.className =
+                "rounded-md p-0.5 transition-transform hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#16302A]";
+              b.setAttribute("aria-label", "Rate " + n + " star" + (n > 1 ? "s" : ""));
+              b.innerHTML = STAR_MARKUP;
+              b.addEventListener("click", function () {
+                rating = n;
+                renderStars();
+                validate();
+              });
+              b.addEventListener("mouseenter", function () {
+                hover = n;
+                renderStars();
+              });
+              starsEl.appendChild(b);
+              starBtns.push(b);
+            })(n);
+          }
+        }
+
+        // Builds the five buttons once, then only repaints them. Rebuilding on every
+        // hover or click removed the button under the cursor, so clicks never registered.
+        function renderStars() {
+          if (!starBtns.length) buildStars();
+          var shown = hover || rating;
+          starBtns.forEach(function (b, i) {
+            var n = i + 1;
+            var filled = n <= shown;
+            var svg = b.firstChild;
+            svg.setAttribute("class", "w-9 h-9 transition-colors " + (filled ? "text-[#c6a15b]" : "text-[#e2dcc8]"));
+            svg.setAttribute("fill", filled ? "#c6a15b" : "none");
+            b.setAttribute("aria-pressed", n === rating ? "true" : "false");
+          });
+          ratingLabel.textContent = shown > 0 ? LABELS[shown - 1] : "";
+        }
+
+        starsEl.addEventListener("mouseleave", function () {
+          hover = 0;
+          renderStars();
+        });
+
+        function validity() {
+          return {
+            name: nameEl.value.trim().length > 1,
+            review: reviewEl.value.trim().length > 9,
+            rating: rating > 0,
+          };
+        }
+        function validate() {
+          var v = validity();
+          document.getElementById("err-name").classList.toggle("hidden", !(touched && !v.name));
+          document.getElementById("err-review").classList.toggle("hidden", !(touched && !v.review));
+          document.getElementById("err-rating").classList.toggle("hidden", !(touched && !v.rating));
+          nameEl.setAttribute("aria-invalid", touched && !v.name ? "true" : "false");
+          reviewEl.setAttribute("aria-invalid", touched && !v.review ? "true" : "false");
+          return v.name && v.review && v.rating;
+        }
+
+        nameEl.addEventListener("input", validate);
+        reviewEl.addEventListener("input", function () {
+          counter.textContent = reviewEl.value.length + "/" + MAX;
+          validate();
+        });
+
+        form.addEventListener("submit", function (e) {
+          e.preventDefault();
+          touched = true;
+          if (!validate() || submitting) return;
+          submitting = true;
+          var btn = document.getElementById("submit");
+          document.getElementById("err-server").classList.add("hidden");
+          btn.disabled = true;
+          document.getElementById("submit-label").textContent = "Submitting";
+          document.getElementById("submit-icon").innerHTML =
+            '<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i>';
+          lucide.createIcons();
+          var fd = new FormData(form);
+          fd.set("rating", rating);
+          fetch(form.dataset.url, {
+            method: "POST",
+            body: fd,
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+          })
+            .then(function (res) {
+              return res.json().then(function (data) {
+                return { ok: res.ok && data.ok, data: data };
+              });
+            })
+            .then(function (r) {
+              if (!r.ok) throw new Error((r.data && r.data.error) || "failed");
+              document.getElementById("done-name").textContent = nameEl.value.trim().split(" ")[0];
+              form.classList.add("hidden");
+              done.classList.remove("hidden");
+              done.classList.add("flex");
+            })
+            .catch(function (err) {
+              var box = document.getElementById("err-server");
+              box.textContent = err.message && err.message !== "failed" ? err.message : "Something went wrong. Please try again.";
+              box.classList.remove("hidden");
+              submitting = false;
+              btn.disabled = false;
+              document.getElementById("submit-label").textContent = "Submit review";
+              document.getElementById("submit-icon").innerHTML = '<i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>';
+              lucide.createIcons();
+            });
+        });
+
+        document.getElementById("another").addEventListener("click", function () {
+          nameEl.value = "";
+          reviewEl.value = "";
+          rating = 0;
+          hover = 0;
+          touched = false;
+          submitting = false;
+          counter.textContent = "0/" + MAX;
+          document.getElementById("submit").disabled = false;
+          document.getElementById("submit-label").textContent = "Submit review";
+          document.getElementById("submit-icon").innerHTML = '<i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>';
+          lucide.createIcons();
+          done.classList.add("hidden");
+          done.classList.remove("flex");
+          form.classList.remove("hidden");
+          renderStars();
+          validate();
+        });
+
+        renderStars();
+      })();
+    </script>
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends "cms/base.html" %}
+{% block title %}{{ sec.label }}{% endblock %}
+{% block content %}
+<div class="mb-6 flex items-start justify-between gap-4 flex-wrap">
+  <div>
+    <h1 class="font-display text-3xl">{{ sec.label }}</h1>
+    <p class="text-sm text-[#8a8171] mt-1">{{ sec.desc }}</p>
+  </div>
+  {% if sec.can_add %}
+  <a href="{% url 'cms:new' sec.slug %}" class="inline-flex items-center gap-2 text-sm font-medium px-5 py-2.5 rounded-full bg-[#16302A] text-white hover:bg-[#1F4A3D] transition-colors">
+    <i data-lucide="plus" class="w-4 h-4"></i>Add {{ sec.singular }}
+  </a>
+  {% endif %}
+</div>
+
+{% if sec.slug == "images" %}
+<div class="bg-white rounded-2xl p-4 mb-4 text-sm">
+  {% if free_slots %}
+  <p class="font-medium">Spots still using the default photo</p>
+  <p class="text-xs text-[#8a8171] mt-1">{% for label in free_slots %}{{ label }}{% if not forloop.last %} &nbsp;·&nbsp; {% endif %}{% endfor %}</p>
+  {% else %}
+  <p class="font-medium">Every spot has its own photo.</p>
+  {% endif %}
+</div>
+{% endif %}
+<div class="grid grid-cols-1 gap-3">
+  {% for r in rows %}
+  <div class="min-w-0 bg-white rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+    <div class="flex items-center gap-3 min-w-0 sm:flex-1">
+      {% if r.thumb %}<img src="{{ r.thumb }}" alt="" class="w-16 h-12 sm:w-20 sm:h-14 rounded-xl object-cover shrink-0" />{% endif %}
+      <div class="min-w-0 flex-1">
+        <a href="{% url 'cms:edit' sec.slug r.pk %}" class="font-medium text-sm hover:underline block break-words line-clamp-2">{{ r.title }}</a>
+        {% if r.subtitle %}<p class="text-xs text-[#8a8171] mt-0.5 break-words line-clamp-2">{{ r.subtitle }}</p>{% endif %}
+        {% if r.updated %}<p class="text-[11px] text-[#a49b89] mt-0.5">Updated {{ r.updated|date:"j M Y" }}</p>{% endif %}
+      </div>
+    </div>
+    {% with kind=r.status.0 label=r.status.1 %}
+    <span class="self-start sm:self-auto text-[11px] px-2.5 py-1 rounded-full whitespace-nowrap {% if kind == 'live' %}bg-[#E3EDE6] text-[#16302A]{% elif kind == 'draft' %}bg-[#F3E6C8] text-[#8a6a2a]{% else %}bg-[#EAE3D0] text-[#8a8171]{% endif %}">{{ label }}</span>
+    {% endwith %}
+    <div class="flex gap-2 items-center flex-wrap">
+      {% if sec.mode == "review" %}
+        {% if r.status.0 != "live" %}
+        <form method="post" action="{% url 'cms:status' sec.slug r.pk %}">{% csrf_token %}<input type="hidden" name="action" value="approve" /><button class="text-xs font-medium px-3.5 py-1.5 rounded-full bg-[#16302A] text-white hover:bg-[#1F4A3D]">Approve</button></form>
+        {% endif %}
+        {% if r.status.1 != "Rejected" %}
+        <form method="post" action="{% url 'cms:status' sec.slug r.pk %}">{% csrf_token %}<input type="hidden" name="action" value="reject" /><button class="text-xs px-3.5 py-1.5 rounded-full bg-[#F4F0E4] hover:bg-[#EAE3D0]">Reject</button></form>
+        {% endif %}
+      {% elif sec.mode == "text" %}
+        {% if r.status.0 == "draft" %}
+        <form method="post" action="{% url 'cms:status' sec.slug r.pk %}">{% csrf_token %}<input type="hidden" name="action" value="publish" /><button class="text-xs font-medium px-3.5 py-1.5 rounded-full bg-[#16302A] text-white hover:bg-[#1F4A3D]">Publish</button></form>
+        {% endif %}
+      {% else %}
+        <form method="post" action="{% url 'cms:status' sec.slug r.pk %}">{% csrf_token %}
+          <input type="hidden" name="action" value="{% if r.status.0 == 'live' %}unpublish{% else %}publish{% endif %}" />
+          <button class="text-xs px-3.5 py-1.5 rounded-full bg-[#F4F0E4] hover:bg-[#EAE3D0]">{% if r.status.0 == "live" %}{% if sec.mode == "status" %}Unpublish{% else %}Hide{% endif %}{% else %}{% if sec.mode == "status" %}Publish{% else %}Show{% endif %}{% endif %}</button>
+        </form>
+      {% endif %}
+      <a href="{% url 'cms:edit' sec.slug r.pk %}" class="text-xs px-3.5 py-1.5 rounded-full bg-[#F4F0E4] hover:bg-[#EAE3D0]">Edit</a>
+      {% if sec.can_delete %}
+      <form method="post" action="{% url 'cms:delete' sec.slug r.pk %}" onsubmit="return confirm('Delete this {{ sec.singular }}? This cannot be undone.')">{% csrf_token %}
+        <button class="text-xs px-3 py-1.5 rounded-full text-[#b3573a] hover:bg-[#F6DDD5]" aria-label="Delete"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+  {% empty %}
+  <p class="text-sm text-[#8a8171]">Nothing here yet.{% if sec.can_add %} Use “Add {{ sec.singular }}” to create the first one.{% endif %}</p>
+  {% endfor %}
+</div>
+{% endblock %}

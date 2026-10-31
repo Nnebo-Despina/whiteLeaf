@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+{% load static site_tags humanize %}
+{% block title %}About Us | {{ hotel.name }}, Enugu{% endblock %}
+{% block meta_description %}Meet {{ hotel.name }}: quiet rooms, a proper kitchen and a team that remembers your name. Read guest reviews and common questions.{% endblock %}
+{% block body_bg %}bg-white{% endblock %}
+{% block extra_css %}.feature-title { color: #a39c8b; }
+        .feature-desc  { color: #bdb6a6; }
+        .feature.active .feature-title { color: #16302a; }
+        .feature.active .feature-desc  { color: #5a5347; }{% endblock %}
+{% block content %}
+
+    <!-- Hero -->
+    <section class="relative h-[420px] overflow-hidden">
+      <img
+        src="{% site_image 'about_hero' 'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1600&q=80' %}"
+        alt="White Leaf hotel lobby"
+        class="absolute inset-0 w-full h-full object-cover"
+      />
+      <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-black/40"></div>
+      <div class="h-20"></div>
+      <div class="relative z-10 max-w-2xl mx-auto text-center px-6 pt-14">
+        <div class="flex justify-center gap-1 mb-4">
+          <i data-lucide="star" class="w-4 h-4 text-[#c6a15b]" fill="#c6a15b"></i
+          ><i data-lucide="star" class="w-4 h-4 text-[#c6a15b]" fill="#c6a15b"></i
+          ><i data-lucide="star" class="w-4 h-4 text-[#c6a15b]" fill="#c6a15b"></i
+          ><i data-lucide="star" class="w-4 h-4 text-[#c6a15b]" fill="#c6a15b"></i
+          ><i data-lucide="star" class="w-4 h-4 text-[#c6a15b]" fill="#c6a15b"></i>
+        </div>
+        <h1 class="font-display text-white text-4xl">{% st "about.title" %}</h1>
+        <p class="text-white/75 text-sm mt-3 max-w-md mx-auto leading-relaxed">
+          {% st "about.sub" %}
+        </p>
+      </div>
+    </section>
+
+    
+    <section class="max-w-7xl mx-auto px-6 md:px-10 py-20">
+      <div class="text-center max-w-xl mx-auto mb-14">
+        <h2 class="font-display text-4xl">{% st "care.title" %}</h2>
+        <p class="mt-4 text-[#5a5347] text-[15px]">
+          {% st "care.sub" %}
+        </p>
+      </div>
+
+      <div class="grid md:grid-cols-[1.3fr_1fr] gap-5">
+        {% site_image 'about_dedicated' 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=900&q=80' as care_fallback %}
+        {% st "care.caption" as care_caption %}
+        <div class="relative rounded-2xl overflow-hidden h-64 bg-[#16302A]">
+          <!-- one photo per feature; the highlighted feature's photo fades in -->
+          {% for f in features %}
+          <img
+            data-care-img
+            src="{{ f.image_url|default:care_fallback }}"
+            alt="{{ f.title }}"
+            class="absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out {% if forloop.first %}opacity-100{% else %}opacity-0{% endif %}"
+          />
+          {% empty %}
+          <img src="{{ care_fallback }}" alt="" class="absolute inset-0 w-full h-full object-cover" />
+          {% endfor %}
+          <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent"></div>
+          <div class="absolute bottom-6 left-6 right-6">
+            <p id="care-caption" class="text-white font-display text-xl leading-snug transition-opacity duration-300">
+              {% with first=features.0 %}{% if first.caption %}{{ first.caption }}{% else %}{{ care_caption }}{% endif %}{% endwith %}
+            </p>
+          </div>
+        </div>
+
+        <div class="bg-[#16302A] rounded-2xl p-7 flex flex-col justify-between">
+          <p class="text-white/60 text-xs tracking-wide mb-4">Our statistics</p>
+          <div class="flex flex-col gap-2">
+            <div class="flex items-baseline gap-2">
+              <span class="font-display text-3xl text-white">{% st "stat1.value" %}</span>
+              <span class="text-white/55 text-xs">{% st "stat1.label" %}</span>
+            </div>
+            <div class="relative w-full h-px bg-[#c6a15b]/10"></div>
+            <div class="flex items-baseline gap-2">
+              <span class="font-display text-3xl text-white">{% st "stat2.value" %}</span>
+              <span class="text-white/55 text-xs">{% st "stat2.label" %}</span>
+            </div>
+            <div class="relative w-full h-px bg-[#c6a15b]/10"></div>
+            <div class="flex items-baseline gap-2">
+              <span class="font-display text-3xl text-white">{% st "stat3.value" %}</span>
+              <span class="text-white/55 text-xs">{% st "stat3.label" %}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- gold line + short thicker green indicator -->
+      <div class="relative w-full h-px bg-[#c6a15b] my-14">
+        <div
+          id="feature-indicator"
+          class="hidden md:block absolute top-1/2 -translate-y-1/2 left-0 h-[4px] w-12 rounded-full bg-[#1f5d45] transition-transform duration-500 ease-[cubic-bezier(.65,0,.35,1)]"
+        ></div>
+      </div>
+
+      <div id="feature-row" class="relative grid grid-cols-2 md:grid-cols-4 gap-8">
+        {% for f in features %}
+        <div class="feature cursor-pointer" data-tint="{{ f.tint }}" data-caption="{% if f.caption %}{{ f.caption }}{% else %}{{ care_caption }}{% endif %}">
+          <p class="feature-title text-sm font-semibold mb-2 transition-colors duration-500">{{ f.title }}</p>
+          <p class="feature-desc text-xs leading-relaxed transition-colors duration-500">
+            {{ f.description }}
+          </p>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- Meet our staff -->
+    <section class="bg-[#F6DFC0]">
+      <div class="max-w-7xl mx-auto px-6 md:px-10 py-20 grid md:grid-cols-2 gap-14 items-center">
+        <div>
+          <h2 class="font-display text-4xl mb-6">{% st "staff.title" %}</h2>
+          <p class="text-[#5a5347] leading-relaxed mb-5 max-w-md">
+            {% st "staff.body" %}
+          </p>
+          <p class="text-[#5a5347] leading-relaxed max-w-md">
+            {% st "staff.body2" %}
+          </p>
+        </div>
+        <img
+          src="{% site_image 'about_staff' 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=900&q=80' %}"
+          alt="White Leaf staff team"
+          class="rounded-2xl w-full h-96 object-cover"
+        />
+      </div>
+    </section>
+
+    {% if reviews %}
+    <!-- Testimonials -->
+    <section class="max-w-7xl mx-auto px-6 md:px-10 py-16 md:py-20 grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-14 items-center">
+      <div class="min-w-0">
+        <span class="inline-block bg-[#F2EFE5] text-[#8a8171] text-xs px-3 py-1 rounded-full mb-5">Testimonial</span>
+        <h2 class="font-display text-4xl leading-tight">What our guests are saying</h2>
+        <p class="mt-4 text-[#5a5347] max-w-sm">
+          A few words from people who stayed longer than a weekend and came back anyway.
+        </p>
+      </div>
+
+      <div class="relative min-w-0 overflow-hidden bg-[#F7F4EA] rounded-2xl p-6 sm:p-8">
+        <i data-lucide="quote" class="w-7 h-7 text-[#c6a15b]" fill="#c6a15b"></i>
+
+        <!-- Slide track: each child is one review -->
+        <div
+          id="t-track"
+          class="flex overflow-x-auto snap-x snap-mandatory scroll-smooth mt-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {% for r in reviews %}
+
+          <div class="w-full min-w-0 shrink-0 snap-center flex flex-col justify-between pr-1">
+            <div class="mb-3">{% rating_stars r.rating "w-4 h-4" %}</div>
+            <p class="text-[#3a352c] leading-relaxed">"{{ r.text }}"</p>
+            <div class="flex items-center gap-3 mt-8 pr-24">
+              <div class="w-9 h-9 shrink-0 rounded-full bg-[#c6a15b]/20 flex items-center justify-center text-sm font-medium text-[#a9813f]">{{ r.author|slice:":1"|upper }}</div>
+              <div>
+                <p class="text-sm font-medium">{{ r.author }}</p>
+                <p class="text-xs text-[#8a8171]">{{ r.details }}</p>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- Controls, pinned to the bottom-right of the card -->
+        <div class="absolute bottom-6 right-6 sm:bottom-8 sm:right-8 flex items-center gap-2{% if reviews|length < 2 %} hidden{% endif %}">
+          <button
+            id="t-prev"
+            class="w-7 h-7 rounded-full border border-[#e2ddca] flex items-center justify-center text-[#8a8171] hover:bg-white transition-colors"
+            aria-label="Previous testimonial"
+          >
+            <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
+          </button>
+          <button
+            id="t-next"
+            class="w-7 h-7 rounded-full bg-[#16302A] flex items-center justify-center text-white hover:bg-[#1F4A3D] transition-colors"
+            aria-label="Next testimonial"
+          >
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    {% endif %}
+
+    <section class="bg-[#F6DFC0]">
+      <div class="max-w-7xl mx-auto px-6 md:px-10 py-20 grid md:grid-cols-[1fr_1.3fr] gap-14">
+        <div>
+          <h2 class="font-display text-4xl leading-tight mb-5">{% st "faq.title" %}</h2>
+          <p class="text-[#5a5347] leading-relaxed max-w-sm mb-10">
+            {% st "faq.sub" %}
+          </p>
+          <div class="bg-[#FAF0DE] rounded-2xl p-6 max-w-xs">
+            <p class="font-display text-lg mb-2">Still have questions?</p>
+            <p class="text-sm text-[#5a5347] leading-relaxed mb-5">
+              {% st "faq.card" %}
+            </p>
+            <a
+              href="{% url 'contact' %}"
+              class="inline-flex items-center gap-3 bg-[#16302A] text-white text-sm font-medium pl-5 pr-2 py-2 rounded-full hover:bg-[#1F4A3D] transition-colors"
+              >Contact us<span class="w-6 h-6 rounded-full bg-white/15 flex items-center justify-center"
+                ><i data-lucide="arrow-right" class="w-3.5 h-3.5"></i></span
+            ></a>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-3 self-start">
+
+          <!-- FAQ item (copy this whole block to add another; just change the id/for pair) -->
+          {% for faq in faqs %}
+          <div class="bg-[#FAF0DE] rounded-xl overflow-hidden">
+            <input type="checkbox" id="faq-{{ forloop.counter }}" class="peer sr-only"{% if forloop.first %} checked{% endif %} />
+            <label
+              for="faq-{{ forloop.counter }}"
+              class="flex items-center justify-between px-5 py-4 text-sm font-medium cursor-pointer select-none
+                    peer-focus-visible:ring-2 peer-focus-visible:ring-[#c6a15b] peer-focus-visible:ring-inset
+                    [&_svg]:transition-transform [&_svg]:duration-300 peer-checked:[&_svg]:rotate-180"
+            >
+              {{ faq.question }}
+              <i data-lucide="chevron-down" class="w-4 h-4 text-[#8a8171] shrink-0"></i>
+            </label>
+            <div class="grid grid-rows-[0fr] peer-checked:grid-rows-[1fr] transition-[grid-template-rows] duration-300 ease-out">
+              <div class="overflow-hidden">
+                <p class="px-5 pb-4 text-sm text-[#5a5347] leading-relaxed">
+                  {{ faq.answer }}
+                </p>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+    
+{% endblock %}
+{% block scripts %}
+<script>
+      (function () {
+        const row = document.getElementById("feature-row");
+        if (!row.children.length) return;
+        const features = [...row.querySelectorAll(".feature")];
+        const indicator = document.getElementById("feature-indicator");
+        const imgs = [...document.querySelectorAll("[data-care-img]")];
+        const caption = document.getElementById("care-caption");
+        let current = 0,
+          timer = null;
+
+        function activate(i) {
+          current = i;
+          features.forEach((f, idx) => f.classList.toggle("active", idx === i));
+          imgs.forEach((im, idx) => {
+            im.classList.toggle("opacity-100", idx === i);
+            im.classList.toggle("opacity-0", idx !== i);
+          });
+          const text = features[i].dataset.caption;
+          if (caption && text && caption.textContent.trim() !== text) {
+            caption.style.opacity = 0;
+            setTimeout(() => {
+              caption.textContent = text;
+              caption.style.opacity = 1;
+            }, 250);
+          }
+          indicator.style.transform = `translateX(${features[i].offsetLeft}px)`;
+        }
+
+        const stop = () => clearInterval(timer);
+        const start = () => {
+          stop();
+          timer = setInterval(() => activate((current + 1) % features.length), 3500);
+        };
+
+        features.forEach((f, i) => {
+          f.addEventListener("mouseenter", () => { stop(); activate(i); });
+          f.addEventListener("click", () => { stop(); activate(i); });
+          f.addEventListener("mouseleave", start);
+        });
+
+        window.addEventListener("resize", () => activate(current));
+        activate(0);
+        start();
+      })();
+    </script>
+    <script>
+      const track = document.getElementById('t-track');
+
+      if (track) document.getElementById('t-next').onclick = () => {
+        const atEnd = track.scrollLeft + track.clientWidth >= track.scrollWidth - 2;
+        atEnd
+          ? track.scrollTo({ left: 0, behavior: 'smooth' })
+          : track.scrollBy({ left: track.clientWidth, behavior: 'smooth' });
+      };
+
+      if (track) document.getElementById('t-prev').onclick = () => {
+        track.scrollLeft <= 2
+          ? track.scrollTo({ left: track.scrollWidth, behavior: 'smooth' })
+          : track.scrollBy({ left: -track.clientWidth, behavior: 'smooth' });
+      };
+    </script>
+{% endblock %}

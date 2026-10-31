@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Accommodations in Enugu | {{ hotel.name }}{% endblock %}
+{% block meta_description %}Browse rooms, suites and apartments at {{ hotel.name }}, Enugu. See beds, amenities and nightly rates, then get in touch to book.{% endblock %}
+{% load static site_tags humanize %}
+{% block body_bg %}bg-white{% endblock %}
+{% block body_extra %} min-h-screen flex flex-col{% endblock %}
+{% block footer_extra %} mt-auto{% endblock %}
+{% block content %}
+
+    <div class="h-20"></div>
+
+    <div class="text-center px-6 pt-8 md:pt-14 pb-8 md:pb-10"><h1 class="font-display text-3xl sm:text-4xl md:text-5xl">Accommodations</h1></div>
+
+    <div class="max-w-7xl mx-auto px-6 md:px-10 w-full">
+      <div class="bg-[#F2EFE5] rounded-full p-1.5 flex max-w-xl mx-auto mb-10">
+        {% for value, label, active in tabs %}
+        <a
+          href="?category={{ value }}"
+          class="flex-1 text-center text-sm font-medium py-2.5 rounded-full transition-colors {% if active %}bg-white text-[#16302A] shadow-sm{% else %}text-[#8a8171] hover:text-[#3a352c]{% endif %}"
+          >{{ label }}</a
+        >
+        {% endfor %}
+      </div>
+
+      <div class="flex flex-col gap-5 pb-16">
+        {% for room in page %}
+        <div
+          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[220px_1fr_1fr_auto] gap-5 lg:gap-8 bg-[#F7F4EA] rounded-2xl p-5 md:p-6 items-stretch"
+        >
+          <a href="{{ room.get_absolute_url }}" class="md:col-span-2 lg:col-span-1"
+            ><img
+              src="{{ room.cover_url }}"
+              alt="{{ room.name }}"
+              class="w-full h-48 sm:h-56 lg:h-full rounded-xl object-cover"
+          /></a>
+          <div class="flex flex-col justify-between">
+            <div>
+              <div class="w-8 h-px bg-[#c6a15b] mb-2"></div>
+              <p class="text-xs tracking-wide text-[#8a8171] uppercase">{{ room.name }}</p>
+            </div>
+            <p class="text-sm text-[#3a352c] leading-relaxed mt-6 md:mt-0">
+              {{ room.tagline }}
+            </p>
+          </div>
+          <div class="flex flex-col justify-between">
+            <div>
+              <p class="font-display text-2xl">
+                {{ room.price_per_night|naira }}<span class="text-sm font-body text-[#8a8171] font-normal"> / per night</span>
+              </p>
+              {% if room.availability == "booked" %}<span class="inline-block mt-2 text-[11px] px-2.5 py-1 rounded-full bg-[#F3E6C8] text-[#8a6a2a]">Fully booked</span>{% endif %}
+            </div>
+            <div class="mt-6 md:mt-0">
+              <p class="text-xs text-[#8a8171] mb-1.5">Basic information</p>
+              <div class="flex items-center justify-between text-sm py-1.5 border-b border-[#eee8d8] last:border-0">
+                <span class="text-[#8a8171]">Bed</span><span class="text-[#241F18] font-medium">{{ room.bed }}</span>
+              </div>
+              <div class="flex items-center justify-between text-sm py-1.5 border-b border-[#eee8d8] last:border-0">
+                <span class="text-[#8a8171]">Bathroom</span><span class="text-[#241F18] font-medium">{{ room.bathrooms }}</span>
+              </div>
+              <div class="flex items-center justify-between text-sm py-1.5 border-b border-[#eee8d8] last:border-0">
+                <span class="text-[#8a8171]">Wi-Fi</span><span class="text-[#241F18] font-medium">{% if room.has_wifi %}Available{% else %}Unavailable{% endif %}</span>
+              </div>
+              <div class="flex items-center justify-between text-sm py-1.5 border-b border-[#eee8d8] last:border-0">
+                <span class="text-[#8a8171]">TV</span><span class="text-[#241F18] font-medium">{% if room.has_tv %}Available{% else %}Unavailable{% endif %}</span>
+              </div>
+            </div>
+          </div>
+          <div class="md:col-span-2 lg:col-span-1 flex flex-col md:flex-row md:items-end md:justify-between lg:flex-col lg:items-stretch lg:justify-between gap-5 lg:w-56">
+            <div class="flex flex-col md:flex-row lg:flex-col gap-4 md:gap-8 lg:gap-4">
+              {% if room.cleanliness_note %}
+              <div class="flex gap-3">
+                <i data-lucide="sparkles" class="w-5 h-5 text-[#16302A] shrink-0 mt-0.5" stroke-width="1.6"></i>
+                <div>
+                  <p class="text-sm font-medium">Cleanliness</p>
+                  <p class="text-xs text-[#8a8171] leading-relaxed mt-0.5">{{ room.cleanliness_note }}</p>
+                </div>
+              </div>
+              {% endif %}
+              {% if room.amenities_note %}
+              <div class="flex gap-3">
+                <i data-lucide="wind" class="w-5 h-5 text-[#16302A] shrink-0 mt-0.5" stroke-width="1.6"></i>
+                <div>
+                  <p class="text-sm font-medium">Amenities</p>
+                  <p class="text-xs text-[#8a8171] leading-relaxed mt-0.5">{{ room.amenities_note }}</p>
+                </div>
+              </div>
+              {% endif %}
+            </div>
+            <a
+              href="{% url 'contact' %}"
+              class="inline-flex items-center gap-3 bg-[#16302A] text-white text-sm font-medium pl-5 pr-2 py-2 rounded-full hover:bg-[#1F4A3D] transition-colors w-full md:w-auto md:shrink-0 justify-between"
+              >Contact us<span class="w-6 h-6 rounded-full bg-white/15 flex items-center justify-center"
+                ><i data-lucide="arrow-right" class="w-3.5 h-3.5"></i></span
+            ></a>
+          </div>
+        </div>
+        {% empty %}
+        <p class="text-center text-sm text-[#8a8171] py-16">No {{ category_label|lower }} are listed yet — check back soon.</p>
+        {% endfor %}
+      </div>
+
+      {% if page.paginator.num_pages > 1 %}
+      <div class="flex items-center justify-center gap-2 pb-20 text-sm">
+        {% for n in page.paginator.page_range %}
+        <a
+          href="?category={{ category }}&page={{ n }}"
+          class="w-8 h-8 rounded-full flex items-center justify-center transition-colors {% if n == page.number %}bg-[#16302A] text-white{% else %}text-[#8a8171] hover:bg-[#F2EFE5]{% endif %}"
+          >{{ n }}</a
+        >
+        {% endfor %}
+        {% if page.has_next %}
+        <a
+          href="?category={{ category }}&page={{ page.next_page_number }}"
+          aria-label="Next page"
+          class="w-8 h-8 rounded-full flex items-center justify-center text-[#8a8171] hover:bg-[#F2EFE5] transition-colors"
+          ><i data-lucide="chevron-right" class="w-4 h-4"></i></a
+        >
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+
+    
+{% endblock %}

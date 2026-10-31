@@ -1,0 +1,518 @@
+{% extends "base.html" %}
+{% block title %}{{ hotel.name }} | Hotel in Enugu{% endblock %}
+{% block meta_description %}Comfortable rooms and suites in Enugu with all-day dining, a bar and a quiet sauna. See rooms and rates, then book your stay at {{ hotel.name }}.{% endblock %}
+{% load static site_tags humanize %}
+{% block body_bg %}bg-[#FAF6EE]{% endblock %}
+{% block content %}
+
+    <!-- Hero -->
+    <section id="top" class="relative h-[92vh] min-h-[560px] flex items-end overflow-hidden">
+      <img
+        src="{% site_image 'home_hero' 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=1600&q=80' %}"
+        alt="White Leaf hotel exterior at dusk"
+        class="absolute inset-0 w-full h-full object-cover"
+      />
+      <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-black/10"></div>
+      <div class="relative z-10 max-w-7xl mx-auto px-6 md:px-10 pb-20 w-full">
+        <p class="text-white/70 text-sm mb-3">{{ hotel.address }}</p>
+        <h1 class="font-display text-5xl md:text-7xl text-white leading-[1.05] max-w-2xl">
+          {% st "hero.title" as hero_title %}{{ hero_title|gold }}
+        </h1>
+        <p class="text-white/80 mt-5 max-w-md text-[15px] leading-relaxed">
+          {% st "hero.sub" %}
+        </p>
+        <div class="mt-8 flex items-center gap-4">
+          <a
+            href="{% url 'rooms:list' %}"
+            class="bg-[#c6a15b] flex items-center gap-4 text-black font-medium text-sm px-5 py-2 rounded-full hover:bg-[#d8b876] transition-colors"
+            >View Rooms
+          </a>
+          <!-- <span class="text-white/60 text-sm">From ₦150,000 / night</span> -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Welcome -->
+    <section id="stay" class="max-w-7xl mx-auto px-6 md:px-10 py-16 md:py-24 grid grid-cols-1 md:grid-cols-2 gap-16 md:gap-14 lg:gap-25 items-center">
+      <div class="relative mb-10 md:mb-0 min-w-0">
+        <img
+          src="{% site_image 'home_welcome' 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80' %}"
+          alt="Suite interior"
+          class="rounded-2xl w-full h-[300px] sm:h-[360px] md:h-[420px] object-cover"
+        />
+
+        <!-- Video Wrapper -->
+        <div
+          class="absolute -bottom-8 right-3 w-[58%] max-w-[260px] sm:max-w-[300px] md:-bottom-10 md:-right-8 lg:-right-14 md:w-[280px] lg:w-[320px] md:max-w-none rounded-2xl overflow-hidden ring-4 ring-[#FAF6EE] shadow-xl bg-black"
+        >
+          {% static 'videos/try.mp4' as default_video %}
+          {% site_video 'home_promo' default_video as promo_url %}
+          <video
+            id="promo-video"
+            class="w-full h-36 sm:h-44 md:h-52 lg:h-56 object-cover"
+            loop
+            playsinline
+            src="{{ promo_url }}"
+            poster="{% site_image 'home_video_poster' 'https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=500&q=80' %}"
+          >
+            Your browser does not support the video tag.
+          </video>
+        </div>
+
+        <!-- Play/Pause Toggle Button -->
+        <button
+          id="video-toggle-btn"
+          class="absolute -bottom-6 left-3 md:-left-3 w-12 h-12 md:w-14 md:h-14 rounded-full bg-[#16302A] text-white flex items-center justify-center shadow-[0_0_0_6px_rgba(22,48,42,0.25)] hover:shadow-[0_0_0_9px_rgba(22,48,42,0.3)] transition-shadow z-10"
+          aria-label="Play or pause video"
+        >
+          <span id="button-icon">
+            <i data-lucide="play" class="w-5 h-5 ml-0.5" fill="currentColor"></i>
+          </span>
+        </button>
+      </div>
+
+      <div>
+        <div class="w-10 h-px bg-[#c6a15b] mb-3"></div>
+        <p class="text-xs text-black font-medium mb-2">{% st "welcome.eyebrow" %}</p>
+        <h2 class="font-display text-4xl leading-tight">{% st "welcome.title" %}</h2>
+        <p class="mt-5 text-[#5a5347] leading-relaxed max-w-md">
+          {% st "welcome.body" %}
+        </p>
+        <a
+          href="#accommodations"
+          class="inline-flex items-center gap-1.5 mt-7 text-sm font-medium text-[#16302A] gold-underline"
+          >Explore the rooms <i data-lucide="arrow-up-right" class="w-4 h-4"></i
+        ></a>
+      </div>
+    </section>
+
+    <!-- Accommodations -->
+    <section id="accommodations" class="max-w-7xl mx-auto px-6 md:px-10 py-16">
+      <div class="text-center max-w-lg mx-auto mb-12">
+        <div class="w-10 h-px bg-[#c6a15b] mx-auto mb-5"></div>
+        <h2 class="font-display text-4xl">{% st "rooms.title" %}</h2>
+        <p class="mt-4 text-[#5a5347] text-[15px]">
+          {% st "rooms.sub" %}
+        </p>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-5">
+        {% for room in featured_rooms %}
+        <a href="{{ room.get_absolute_url }}" class="group">
+          <div class="rounded-xl overflow-hidden h-64">
+            <img
+              src="{{ room.cover_url }}"
+              alt="{{ room.name }}"
+              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+          </div>
+          <p class="font-display text-lg mt-3">{{ room.name }}</p>
+          <p class="text-[#8a8171] text-sm">{% if room.size_sqm %}{{ room.size_sqm }} m²{% if room.card_note %} · {% endif %}{% endif %}{% if room.card_note %}{{ room.card_note }}{% elif not room.size_sqm %}{{ room.bed }}{% endif %}</p>
+        </a>
+        {% empty %}
+        <p class="col-span-full text-center text-sm text-[#8a8171]">Rooms are coming soon.</p>
+        {% endfor %}
+      </div>
+    </section>
+
+    {% if reviews_json %}
+    <!-- Testimonial -->
+    <section class="mx-auto pt-16 pb-12 md:pb-20 lg:pb-16">
+      <div class="relative w-full bg-[#16302A] px-4 py-12 sm:px-8 sm:py-16 md:p-0 md:h-[420px] lg:h-[65vh] md:overflow-visible">
+        <!-- Background image: fills the whole block, behind the card -->
+        <img
+          id="bg-image"
+          src="{% site_image 'home_review' 'https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?auto=format&fit=crop&w=1200&q=80' %}"
+          alt="Terrace overlooking gardens"
+          class="absolute inset-0 w-full h-full object-cover transition-opacity duration-700"
+        />
+
+        <!-- Testimonial Card Overlay -->
+        <div
+          class="relative z-10 mx-auto max-w-xl md:max-w-none md:mx-0 md:w-[58%] lg:w-[45%] md:absolute md:-bottom-8 lg:-bottom-[5vh] md:left-[4%] h-auto md:min-h-[400px] lg:min-h-[75vh] bg-[#16302A] text-white p-6 sm:p-8 lg:p-14 flex flex-col justify-between shadow-2xl overflow-hidden rounded-2xl"
+        >
+          <!-- Top Progress Bar (Auto-play Indicator) -->
+          <div class="absolute top-0 left-0 right-0 h-1 bg-white/10">
+            <div id="review-progress" class="h-full bg-[#c6a15b] w-0 transition-all duration-100 ease-linear"></div>
+          </div>
+
+          <!-- Background Leaf Watermark -->
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            class="w-12 h-12 text-[#c6a15b]/20 absolute top-8 right-8 pointer-events-none"
+          >
+            <path
+              d="M4 20c8-1 14-7 15-15-8 1-14 7-15 15Z"
+              stroke="currentColor"
+              stroke-width="1.4"
+              stroke-linejoin="round"
+            />
+            <path d="M6 18c3-4 7-8 12-11" stroke="currentColor" stroke-width="1.4" />
+          </svg>
+
+          <div>
+            <div class="w-10 h-px bg-[#c6a15b] mb-5"></div>
+            <p class="font-display text-2xl leading-snug tracking-wide">What our guests say</p>
+          </div>
+
+          <!-- Animated Content Container -->
+          <div id="review-content" class="my-6 transition-all duration-500 transform opacity-100 translate-y-0">
+            <div id="review-stars" class="mb-4">{% rating_stars first_review.rating "w-4 h-4" "text-white/25" %}</div>
+            <p
+              id="review-text"
+              class="text-white/85 text-base lg:text-xl font-light italic leading-relaxed lg:min-h-[110px]"
+            >"{{ first_review.text }}"</p>
+
+            <div class="flex items-center gap-4 mt-8">
+              <div id="review-avatar" class="w-11 h-11 rounded-full bg-[#c6a15b]/20 ring-2 ring-[#c6a15b]/40 flex items-center justify-center text-sm font-medium text-[#c6a15b]">{{ first_review.author|slice:":1"|upper }}</div>
+              <div>
+                <p id="review-author" class="text-sm font-medium tracking-wide">{{ first_review.author }}</p>
+                <p id="review-details" class="text-xs text-white/50">{{ first_review.details }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Navigation & Page Counter -->
+          <div class="flex items-center justify-between pt-6 border-t border-white/10">
+            <span id="review-counter" class="text-xs font-mono tracking-widest text-[#c6a15b]">01 / {{ reviews_json|length|zpad }}</span>
+
+            <div class="flex items-center gap-3">
+              <button
+                id="prev-btn"
+                class="p-2 rounded-full border border-white/20 text-white/70 hover:text-white hover:border-[#c6a15b] hover:bg-[#c6a15b]/10 transition-all duration-300"
+                aria-label="Previous review"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <button
+                id="next-btn"
+                class="p-2 rounded-full border border-white/20 text-white/70 hover:text-white hover:border-[#c6a15b] hover:bg-[#c6a15b]/10 transition-all duration-300"
+                aria-label="Next review"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        
+      </div>
+    </section>
+    {% endif %}
+
+    <!-- Bar -->
+    <section id="the-bar" class="max-w-7xl mx-auto px-6 md:px-10 py-16 grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-14 items-center">
+      <div>
+        <div class="w-10 h-px bg-[#c6a15b] mb-5"></div>
+        <h2 class="font-display text-4xl">{% st "bar.title" %}</h2>
+        <p class="mt-5 text-[#5a5347] leading-relaxed max-w-md">
+          {% st "bar.body" %}
+        </p>
+        <p class="mt-4 text-[#5a5347] leading-relaxed max-w-md">
+          {% st "bar.body2" %}
+        </p>
+      </div>
+      <img
+        src="{% site_image 'home_bar' 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=900&q=80' %}"
+        alt="Cocktail being poured at the bar"
+        class="rounded-2xl w-full h-72 md:h-[360px] lg:h-[420px] object-cover"
+      />
+    </section>
+
+    <!-- Amenities -->
+    <section id="amenities" class="max-w-7xl mx-auto px-6 md:px-10 py-16">
+      <div class="text-center max-w-lg mx-auto mb-12">
+        <div class="w-10 h-px bg-[#c6a15b] mx-auto mb-5"></div>
+        <h2 class="font-display text-4xl">{% st "amenities.title" %}</h2>
+        <p class="mt-4 text-[#5a5347] text-[15px]">
+          {% st "amenities.sub" %}
+        </p>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {% for f in facilities %}
+        <div
+          class="bg-[#EAE7DA] rounded-xl p-6 flex flex-col items-center gap-3 text-center hover:bg-[#E1DCC7] transition-colors"
+        >
+          <i data-lucide="{{ f.icon }}" class="w-6 h-6 text-[#16302A]" stroke-width="1.6"></i>
+          <span class="text-sm font-medium text-[#3a352c]">{{ f.title }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    {% if attractions %}
+    <!-- Nearby -->
+    <section class="max-w-7xl mx-auto px-6 md:px-10 py-16">
+      <!--
+    The stage is the 6-column area. Cards are absolutely positioned and the JS
+    below moves them between "slots" so the left/width can animate smoothly.
+    --g is the gap, --col is one column width.
+  -->
+      <div
+        id="stage"
+        class="relative mt-10 md:h-[460px] lg:h-[75vh] md:overflow-hidden"
+        style="--g: 1rem; --col: calc((100% - 5 * var(--g)) / 6)"
+      >
+        <!-- Heading panel: above the cards on mobile; on md+ it sits over them (z-20) so the big card slides behind it -->
+        <div
+          class="mb-6 md:mb-0 md:absolute md:left-0 md:top-0 md:z-20 md:flex md:h-full md:flex-col md:justify-end md:bg-[#FAF6EE] md:w-[calc(2*var(--col)+2*var(--g))] md:pr-4"
+        >
+          <div class="w-10 h-px bg-[#c6a15b] mb-5"></div>
+          <p class="text-xs text-black font-medium mb-2">{% st "nearby.eyebrow" %}</p>
+          <h2 class="font-display text-3xl lg:text-4xl max-w-md">{% st "nearby.title" %}</h2>
+        </div>
+
+        <!-- Mobile: swipeable row. md+: this wrapper disappears and the cards are positioned by the script. -->
+        <div class="flex gap-4 overflow-x-auto snap-x snap-mandatory scroll-pl-6 no-scrollbar -mx-6 px-6 pb-2 md:contents">
+          {% for a in attractions %}
+          <article
+            data-card
+            class="group relative shrink-0 w-64 h-72 snap-start overflow-hidden rounded-xl md:absolute md:top-0 md:h-full md:w-auto md:shrink transition-[left,width,opacity,transform] duration-[900ms] ease-[cubic-bezier(.65,0,.35,1)]"
+          >
+            {% if a.image_url %}
+            <img
+              src="{{ a.image_url }}"
+              alt="{{ a.name }}"
+              class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+            {% else %}
+            <div class="h-full w-full bg-[#16302A]"></div>
+            {% endif %}
+            <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+            <p class="absolute bottom-4 left-4 text-sm font-medium text-white">{{ a.name }}</p>
+          </article>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
+    <!-- CTA -->
+    <section id="book" class="max-w-7xl mx-auto px-6 md:px-10 pb-24">
+      <div class="bg-[#16302A] rounded-2xl overflow-hidden grid md:grid-cols-2 items-center">
+        <div class="p-10 md:p-14">
+          <h3 class="font-display text-white text-3xl md:text-4xl leading-tight">{% st "cta.title" %}</h3>
+          <p class="text-white/70 mt-4 max-w-sm">
+            {% st "cta.body" %}
+          </p>
+          <a
+            href="{% url 'contact' %}"
+            class="inline-block mt-7 bg-[#c6a15b] text-[#16302A] font-medium text-sm px-6 py-3 rounded-full hover:bg-[#d8b876] transition-colors"
+            >Check availability</a
+          >
+        </div>
+        <img
+          src="{% site_image 'home_cta' 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=900&q=80' %}"
+          alt="Suite bedroom"
+          class="w-full h-64 md:h-full object-cover"
+        />
+      </div>
+    </section>
+
+    <!-- Footer -->
+    
+{% endblock %}
+{% block scripts %}
+{% if reviews_json %}{{ reviews_json|json_script:"reviews-data" }}{% endif %}
+<script>
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const video = document.getElementById("promo-video");
+        const toggleBtn = document.getElementById("video-toggle-btn");
+        const iconContainer = document.getElementById("button-icon");
+
+        toggleBtn.addEventListener("click", () => {
+          if (video.paused) {
+            video.play();
+            // Change icon to Pause
+            iconContainer.innerHTML = `<i data-lucide="pause" class="w-5 h-5" fill="currentColor"></i>`;
+          } else {
+            video.pause();
+            // Change icon back to Play
+            iconContainer.innerHTML = `<i data-lucide="play" class="w-5 h-5 ml-0.5" fill="currentColor"></i>`;
+          }
+
+          // Re-initialize Lucide Icons if Lucide is present on the page
+          if (window.lucide) {
+            lucide.createIcons();
+          }
+        });
+      });
+
+      document.addEventListener("DOMContentLoaded", () => {
+        if (!document.getElementById("reviews-data")) return;
+        const reviews = JSON.parse(document.getElementById("reviews-data").textContent);
+        const starsEl = document.getElementById("review-stars");
+        function starsHtml(n) {
+          var h = '<span class="inline-flex gap-0.5" role="img" aria-label="' + n + ' out of 5 stars">';
+          for (var i = 1; i <= 5; i++) {
+            var on = i <= n;
+            h += '<svg viewBox="0 0 24 24" class="w-4 h-4 ' + (on ? "text-[#c6a15b]" : "text-white/25") + '" fill="' + (on ? "#c6a15b" : "none") +
+              '" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
+          }
+          return h + "</span>";
+        }
+
+        let currentIndex = 0;
+        const duration = 6000; // 6 seconds per slide
+        let timer = null;
+        let progressTimer = null;
+        let startTime = null;
+
+        const contentBox = document.getElementById("review-content");
+        const textEl = document.getElementById("review-text");
+        const authorEl = document.getElementById("review-author");
+        const detailsEl = document.getElementById("review-details");
+        const avatarEl = document.getElementById("review-avatar");
+        const counterEl = document.getElementById("review-counter");
+        const progressBar = document.getElementById("review-progress");
+
+        function updateProgressBar() {
+          progressBar.style.width = "0%";
+          let elapsed = 0;
+          clearInterval(progressTimer);
+
+          progressTimer = setInterval(() => {
+            elapsed += 100;
+            const percentage = Math.min((elapsed / duration) * 100, 100);
+            progressBar.style.width = `${percentage}%`;
+            if (elapsed >= duration) clearInterval(progressTimer);
+          }, 100);
+        }
+
+        function showReview(index) {
+          // Fade out and translate down slightly
+          contentBox.classList.remove("opacity-100", "translate-y-0");
+          contentBox.classList.add("opacity-0", "translate-y-3");
+
+          setTimeout(() => {
+            // Swap content
+            const data = reviews[index];
+            textEl.textContent = data.text;
+            authorEl.textContent = data.author;
+            detailsEl.textContent = data.details;
+            avatarEl.textContent = data.author.charAt(0).toUpperCase();
+            starsEl.innerHTML = starsHtml(data.rating);
+            counterEl.textContent = String(index + 1).padStart(2, "0") + " / " + String(reviews.length).padStart(2, "0");
+
+            // Fade back in and translate up to original position
+            contentBox.classList.remove("opacity-0", "translate-y-3");
+            contentBox.classList.add("opacity-100", "translate-y-0");
+
+            updateProgressBar();
+          }, 300); // 300ms matches Tailwind fade duration
+        }
+
+        function nextReview() {
+          currentIndex = (currentIndex + 1) % reviews.length;
+          showReview(currentIndex);
+        }
+
+        function prevReview() {
+          currentIndex = (currentIndex - 1 + reviews.length) % reviews.length;
+          showReview(currentIndex);
+        }
+
+        function resetAutoPlay() {
+          clearInterval(timer);
+          timer = setInterval(nextReview, duration);
+        }
+
+        // Event listeners
+        document.getElementById("next-btn").addEventListener("click", () => {
+          nextReview();
+          resetAutoPlay();
+        });
+
+        document.getElementById("prev-btn").addEventListener("click", () => {
+          prevReview();
+          resetAutoPlay();
+        });
+
+        // Initialize carousel
+        updateProgressBar();
+        timer = setInterval(nextReview, duration);
+      });
+
+      (() => {
+        const DURATION = 900; // keep in sync with duration-[900ms] on the cards
+        const INTERVAL = 3200; // time between moves
+
+        const stage = document.getElementById("stage");
+        if (!stage) return;
+        const queue = [...stage.querySelectorAll("[data-card]")];
+
+        const col = "var(--col)",
+          gap = "var(--g)";
+        const left = (c) => `calc(${c} * (${col} + ${gap}))`;
+        const width = (n) => `calc(${n} * ${col} + ${n - 1} * ${gap})`;
+
+        // Visible slots by queue position: [start column, column span]
+        const SLOTS = [
+          [2, 2],
+          [4, 1],
+          [5, 1],
+        ];
+
+        function place(el, i) {
+          const slot = SLOTS[i];
+          if (slot) {
+            el.style.left = left(slot[0]);
+            el.style.width = width(slot[1]);
+            el.style.opacity = 1;
+            el.style.transform = "none";
+          } else {
+            // Waiting "behind" the last visible slot, invisible
+            el.style.left = left(5);
+            el.style.width = width(1);
+            el.style.opacity = 0;
+            el.style.transform = "scale(.9)";
+          }
+          el.style.zIndex = 10 - i; // later cards sit behind earlier ones
+        }
+
+        function rotate() {
+          const leaving = queue.shift();
+
+          // Biggest card slides left, underneath the heading panel (z-20)
+          leaving.style.zIndex = 1;
+          leaving.style.left = left(0);
+          leaving.style.width = width(2);
+
+          // Everyone else moves up a slot; the next waiting card fades in behind
+          queue.forEach(place);
+
+          // Once it's hidden, silently send it to the back of the line
+          setTimeout(() => {
+            leaving.style.transition = "none";
+            place(leaving, queue.length);
+            void leaving.offsetWidth; // flush styles so the jump isn't animated
+            leaving.style.transition = "";
+            queue.push(leaving);
+          }, DURATION + 50);
+        }
+
+        const wide = window.matchMedia("(min-width: 768px)");
+        const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        let timer = null;
+
+        function sync() {
+          clearInterval(timer);
+          timer = null;
+          if (wide.matches) {
+            queue.forEach(place);
+            if (!reduced) timer = setInterval(rotate, INTERVAL);
+          } else {
+            // phones: plain swipeable row, so clear the positions the script set
+            queue.forEach((el) => el.removeAttribute("style"));
+          }
+        }
+        sync();
+        wide.addEventListener("change", sync);
+      })();
+    </script>
+{% endblock %}

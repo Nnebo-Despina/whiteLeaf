@@ -1,0 +1,7 @@
+<a
+  href="{% url url_name %}"
+  class="shrink-0 flex items-center gap-3 rounded-full pl-1.5 pr-5 py-1.5 text-sm font-medium {% if page == key %}bg-[#16302A] text-white{% else %}text-[#5a5347] hover:bg-[#F4F0E4]{% endif %}"
+  ><span class="w-9 h-9 rounded-full flex items-center justify-center {% if page == key %}bg-white/15{% else %}bg-[#F4F0E4]{% endif %}"
+    ><i data-lucide="{{ icon }}" class="w-4 h-4"></i></span
+  >{{ label }}</a
+>

@@ -1,0 +1,23 @@
+{% if field.field.widget.allow_multiple_selected %}
+<div class="sm:col-span-2 min-w-0">
+  <span class="text-xs text-[#8a8171]">{{ field.label }}</span>
+  <div class="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+    {% for choice in field %}
+    <label class="flex items-start gap-3 rounded-xl bg-[#F4F0E4] px-3.5 py-2.5 text-sm cursor-pointer min-w-0">
+      {{ choice.tag }}<span class="min-w-0 break-words">{{ choice.choice_label }}</span>
+    </label>
+    {% empty %}
+    <p class="text-xs text-[#8a8171]">Nothing to choose yet. Add some under Room amenities first.</p>
+    {% endfor %}
+  </div>
+  {% for e in field.errors %}<span class="block text-xs text-[#b3573a] mt-1">{{ e }}</span>{% endfor %}
+</div>
+{% else %}
+<label class="block min-w-0 break-words {% if field.name == 'body' or field.name == 'description' or field.name == 'answer' or field.name == 'text' or field.name == 'cleanliness_note' or field.name == 'amenities_note' %}sm:col-span-2{% endif %}">
+  <span class="text-xs text-[#8a8171]">{{ field.label }}</span>
+  {% if field.field.widget.input_type == "checkbox" %}<span class="block mt-1">{{ field }}</span>{% else %}{{ field }}{% endif %}
+  {% if field.help_text %}<span class="block text-[11px] text-[#a49b89] mt-1">{{ field.help_text }}</span>{% endif %}
+  {% for e in field.errors %}<span class="block text-xs text-[#b3573a] mt-1">{{ e }}</span>{% endfor %}
+</label>
+
+{% endif %}

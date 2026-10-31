@@ -1,0 +1,53 @@
+{% extends "cms/base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="mb-6">
+  <h1 class="font-display text-3xl">Quick Stats</h1>
+  <p class="text-sm text-[#8a8171] mt-1">Your website content at a glance.</p>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
+  {% for icon, value, label in stats %}
+  <div class="bg-white rounded-[28px] p-5 text-center">
+    <span class="w-11 h-11 rounded-full flex items-center justify-center mx-auto {% if forloop.first %}bg-[#16302A] text-white{% else %}bg-[#F4F0E4] text-[#16302A]{% endif %}"><i data-lucide="{{ icon }}" class="w-5 h-5"></i></span>
+    <p class="font-display text-2xl mt-3">{{ value }}</p>
+    <p class="text-xs text-[#8a8171]">{{ label }}</p>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="grid xl:grid-cols-[1.6fr_1fr] gap-5 mt-5">
+  <div class="bg-white rounded-3xl p-4 sm:p-6">
+    <p class="font-medium mb-4">Jump to</p>
+    <div class="grid sm:grid-cols-2 gap-3">
+      <a href="{% url 'cms:hotel' %}" class="flex items-center gap-3 bg-[#F4F0E4]/70 hover:bg-[#EAE3D0] rounded-xl px-4 py-3 text-sm transition-colors">
+        <i data-lucide="building-2" class="w-4 h-4 text-[#16302A]"></i>
+        <span><span class="font-medium block">Hotel info</span><span class="text-xs text-[#8a8171]">Contact details and times shown across the site.</span></span>
+      </a>
+      {% for s in sections %}
+      <a href="{% url 'cms:list' s.slug %}" class="flex items-center gap-3 bg-[#F4F0E4]/70 hover:bg-[#EAE3D0] rounded-xl px-4 py-3 text-sm transition-colors">
+        <i data-lucide="{{ s.icon }}" class="w-4 h-4 text-[#16302A]"></i>
+        <span><span class="font-medium block">{{ s.label }}</span><span class="text-xs text-[#8a8171]">{{ s.desc }}</span></span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="bg-white rounded-3xl p-4 sm:p-6">
+    <p class="font-medium mb-4">Pending approvals</p>
+    {% for p in pending %}
+    <div class="flex items-center gap-3 py-2.5">
+      <span class="w-9 h-9 rounded-full bg-[#F4F0E4] flex items-center justify-center shrink-0"><i data-lucide="{{ p.icon }}" class="w-4 h-4 text-[#16302A]"></i></span>
+      <div class="min-w-0 flex-1">
+        <a href="{% url 'cms:edit' p.section p.pk %}" class="text-sm font-medium truncate block hover:underline">{{ p.title }}</a>
+        <p class="text-xs text-[#8a8171]">{{ p.when|date:"j M Y" }}</p>
+      </div>
+      <form method="post" action="{% url 'cms:status' p.section p.pk %}">
+        {% csrf_token %}<input type="hidden" name="action" value="{{ p.action }}" /><input type="hidden" name="next" value="{% url 'cms:dashboard' %}" />
+        <button class="text-xs font-medium bg-[#16302A] text-white px-3.5 py-1.5 rounded-full hover:bg-[#1F4A3D]">{{ p.label }}</button>
+      </form>
+    </div>
+    {% empty %}
+    <p class="text-sm text-[#8a8171]">Nothing waiting — all changes are live.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

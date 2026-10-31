@@ -1,0 +1,76 @@
+{% load static %}<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>{% block title %}Dashboard{% endblock %} — White Leaf Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style type="text/tailwindcss">
+      @theme {
+        --font-display: "Fraunces", sans-serif;
+        --font-body: "Inter", sans-serif;
+      }
+      @layer utilities {
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      }
+    </style>
+  </head>
+  <body class="font-body bg-[#E9E4D6] text-[#241F18] antialiased">
+    <div class="h-[100dvh] p-3 lg:p-6">
+      <div class="bg-white rounded-3xl lg:rounded-[2rem] shadow-xl overflow-hidden flex flex-col lg:flex-row h-full">
+        <aside class="lg:w-64 shrink-0 p-4 lg:p-5 flex flex-col gap-4 lg:gap-6 lg:overflow-y-auto min-w-0">
+          <div class="flex items-center gap-2.5">
+            <img src={% static 'img/favicon.svg' %} alt={{ hotel.name }} class="w-9 h-9">
+            <span class="font-display text-lg">White Leaf <span class="text-xs font-body text-[#8a8171]">Admin</span></span>
+          </div>
+          <nav class="flex lg:flex-col gap-1.5 overflow-x-auto lg:overflow-visible no-scrollbar">
+            {% include "cms/_nav_link.html" with url_name="cms:dashboard" label="Dashboard" icon="layout-dashboard" key="dash" %}
+            {% include "cms/_nav_link.html" with url_name="cms:hotel" label="Hotel info" icon="building-2" key="hotel" %}
+            {% for s in sections %}
+            <a
+              href="{% url 'cms:list' s.slug %}"
+              class="shrink-0 flex items-center gap-3 rounded-full pl-1.5 pr-5 py-1.5 text-sm font-medium {% if page == s.slug %}bg-[#16302A] text-white{% else %}text-[#5a5347] hover:bg-[#F4F0E4]{% endif %}"
+              ><span class="w-9 h-9 rounded-full flex items-center justify-center {% if page == s.slug %}bg-white/15{% else %}bg-[#F4F0E4]{% endif %}"
+                ><i data-lucide="{{ s.icon }}" class="w-4 h-4"></i></span
+              >{{ s.label }}</a
+            >
+            {% endfor %}
+          </nav>
+          <div class="hidden lg:block mt-auto text-center">
+            <a href="{% url 'home' %}" target="_blank" class="text-xs text-[#16302A] underline decoration-[#c6a15b] underline-offset-4">View website</a>
+            <div class="w-12 h-12 rounded-full bg-[#16302A] text-white flex items-center justify-center mx-auto mt-5 font-display">{{ request.user.username|slice:":1"|upper }}</div>
+            <p class="text-sm font-medium mt-2">{{ request.user.get_full_name|default:request.user.username }}</p>
+            <form method="post" action="{% url 'cms:logout' %}">{% csrf_token %}<button class="text-xs text-[#8a8171] mt-1 hover:text-[#16302A]">Sign out</button></form>
+          </div>
+        </aside>
+        <main class="flex-1 min-w-0 min-h-0 bg-[#F4F0E4] p-4 sm:p-5 lg:p-8 overflow-y-auto overflow-x-hidden">
+          {% if messages %}
+          <div id="toast-area" class="mb-5 flex flex-col gap-2">
+            {% for m in messages %}
+            <p class="rounded-xl px-4 py-2.5 text-sm {% if m.tags == 'error' %}bg-[#F6DDD5] text-[#8a3a22]{% else %}bg-[#E3EDE6] text-[#16302A]{% endif %}">{{ m }}</p>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% block content %}{% endblock %}
+          <div class="lg:hidden text-center mt-8">
+            <form method="post" action="{% url 'cms:logout' %}">{% csrf_token %}<button class="text-xs text-[#8a8171]">Sign out</button></form>
+          </div>
+        </main>
+      </div>
+    </div>
+    <script src="https://unpkg.com/lucide@0.383.0/dist/umd/lucide.min.js"></script>
+    <script>
+      lucide.createIcons();
+      setTimeout(function () { var t = document.getElementById("toast-area"); if (t) t.remove(); }, 4000);
+    </script>
+    {% block scripts %}{% endblock %}
+  </body>
+</html>

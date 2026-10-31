@@ -1,0 +1,56 @@
+{% extends "cms/base.html" %}
+{% block title %}{% if is_new %}Add {{ sec.singular }}{% else %}Edit {{ sec.singular }}{% endif %}{% endblock %}
+{% block content %}
+<a href="{% url 'cms:list' sec.slug %}" class="inline-flex items-center gap-2 text-xs text-[#8a8171] hover:text-[#16302A] mb-4"><i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>Back to {{ sec.label|lower }}</a>
+<div class="mb-6">
+  <h1 class="font-display text-3xl">{% if is_new %}Add {{ sec.singular }}{% elif sec.mode == "text" %}{{ obj.label }}{% else %}Edit {{ sec.singular }}{% endif %}</h1>
+  {% if sec.mode == "text" %}<p class="text-sm text-[#8a8171] mt-1">Wrap a word in *stars* where the page shows a gold or bold highlight.</p>{% endif %}
+</div>
+
+<form method="post" enctype="multipart/form-data" class="grid gap-5">
+  {% csrf_token %}
+  <div class="bg-white rounded-3xl p-4 sm:p-6">
+    {% if form.non_field_errors %}<p class="text-xs text-[#b3573a] mb-3">{{ form.non_field_errors }}</p>{% endif %}
+    <div class="grid sm:grid-cols-2 gap-4">
+      {% for field in form %}{% include "cms/_field.html" %}{% endfor %}
+    </div>
+  </div>
+
+  {% for heading, fs in formsets %}
+  <div class="bg-white rounded-3xl p-4 sm:p-6">
+    <p class="font-medium mb-1">{{ heading }}</p>
+    {% if not is_new %}<p class="text-xs text-[#8a8171] mb-4">Fill the empty row at the bottom to add one. Tick Delete to remove a row.</p>{% else %}<p class="text-xs text-[#8a8171] mb-4">Save once first, then add more rows.</p>{% endif %}
+    {{ fs.management_form }}
+    {% if fs.non_form_errors %}<p class="text-xs text-[#b3573a] mb-3">{{ fs.non_form_errors }}</p>{% endif %}
+    <div class="grid gap-4">
+      {% for f in fs %}
+      <div class="rounded-2xl bg-[#F4F0E4]/60 p-3 sm:p-4 min-w-0">
+        {% for hidden in f.hidden_fields %}{{ hidden }}{% endfor %}
+        <div class="grid sm:grid-cols-2 gap-3">
+          {% for field in f.visible_fields %}
+            {% if field.name != "DELETE" %}{% include "cms/_field.html" %}{% endif %}
+          {% endfor %}
+        </div>
+        {% if f.instance.pk %}
+        <label class="mt-3 inline-flex items-center gap-2 text-xs text-[#b3573a]">{{ f.DELETE }} Delete this row</label>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+
+  <div class="flex flex-wrap gap-2">
+    {% if sec.mode == "text" or sec.mode == "status" %}
+      <button name="action" value="draft" class="inline-flex items-center gap-2 text-sm font-medium px-5 py-2.5 rounded-full bg-white text-[#16302A] hover:bg-[#EAE3D0] transition-colors">Save draft</button>
+      <button name="action" value="publish" class="inline-flex items-center gap-2 text-sm font-medium px-5 py-2.5 rounded-full bg-[#16302A] text-white hover:bg-[#1F4A3D] transition-colors">{% if sec.mode == "text" %}Update live{% else %}Publish{% endif %}</button>
+    {% elif sec.mode == "review" %}
+      <button name="action" value="approve" class="inline-flex items-center gap-2 text-sm font-medium px-5 py-2.5 rounded-full bg-[#16302A] text-white hover:bg-[#1F4A3D] transition-colors">Approve</button>
+      <button name="action" value="reject" class="inline-flex items-center gap-2 text-sm font-medium px-5 py-2.5 rounded-full bg-white text-[#16302A] hover:bg-[#EAE3D0] transition-colors">Reject</button>
+      <button name="action" value="save" class="inline-flex items-center gap-2 text-sm font-medium px-5 py-2.5 rounded-full bg-white text-[#16302A] hover:bg-[#EAE3D0] transition-colors">Save changes only</button>
+    {% else %}
+      <button name="action" value="save" class="inline-flex items-center gap-2 text-sm font-medium px-5 py-2.5 rounded-full bg-[#16302A] text-white hover:bg-[#1F4A3D] transition-colors">Save changes</button>
+    {% endif %}
+  </div>
+</form>
+{% endblock %}
