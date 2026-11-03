@@ -1,6 +1,12 @@
+from django.conf import settings
+from django.core.mail import send_mail
 from django.http import HttpResponse
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.urls import reverse
+from django.utils import timezone
+from django_ratelimit.decorators import ratelimit
+
+from bookings.forms import BookingForm
 
 from core.models import FAQ, Attraction, Facility, Feature
 from reviews.models import Review
@@ -34,8 +40,53 @@ def about(request):
     })
 
 
+@ratelimit(key="ip", rate="8/h", method="POST", block=False)
 def contact(request):
-    return render(request, "core/contact.html")
+    """Contact & Booking page: the booking form on top, hotel details, map and review form below."""
+    limited = False
+    booking_done = None
+    if request.method == "POST":
+        form = BookingForm(request.POST)
+        if getattr(request, "limited", False):
+            limited = True
+        elif form.is_valid():
+            if form.cleaned_data.get("website"):
+                return redirect(f"{reverse('contact')}?booked=1#book")  # bot: pretend it worked, save nothing
+            booking = form.save()
+            request.session["last_booking"] = booking.pk
+            _notify_hotel(booking)
+            return redirect(f"{reverse('contact')}?booked=1#book")
+    else:
+        initial = {}
+        slug = request.GET.get("room")
+        if slug:
+            from rooms.models import Room
+
+            room = Room.published.filter(slug=slug).first()
+            if room:
+                initial["room"] = room.pk
+        form = BookingForm(initial=initial)
+        if request.GET.get("booked"):
+            from bookings.models import BookingRequest
+
+            booking_done = BookingRequest.objects.filter(pk=request.session.pop("last_booking", None)).first() or True
+    return render(request, "core/contact.html", {
+        "form": form, "limited": limited, "booking_done": booking_done, "today": timezone.localdate().isoformat(),
+    })
+
+
+def _notify_hotel(booking):
+    email = getattr(settings, "BOOKING_NOTIFY_EMAIL", "")
+    if not email:
+        return
+    send_mail(
+        f"New booking request {booking.reference}: {booking.name}",
+        f"{booking.name} ({booking.phone}) would like {booking.room_label}\n"
+        f"{booking.check_in:%d %b %Y} to {booking.check_out:%d %b %Y} ({booking.nights} nights)\n"
+        f"{booking.adults} adult(s), {booking.children} child(ren)\n\n"
+        "Open your dashboard > Bookings to reply.",
+        None, [email], fail_silently=True,
+    )
 
 
 def robots_txt(request):

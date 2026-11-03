@@ -46,20 +46,21 @@ INSTALLED_APPS = [
     "tariffs", 
     "reviews", 
     "cms",
+    "bookings",
+
     
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    "core.middleware.StagingPasswordMiddleware"
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "django.middleware.security.SecurityMiddleware",
+    "core.middleware.StagingPasswordMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "axes.middleware.AxesMiddleware",
-    
 ]
 
 ROOT_URLCONF = 'whiteLeaf.urls'
@@ -84,6 +85,8 @@ TEMPLATES = [
         },
     },
 ]
+
+BOOKING_NOTIFY_EMAIL = os.environ.get("BOOKING_NOTIFY_EMAIL", "")
 
 WSGI_APPLICATION = 'whiteLeaf.wsgi.application'
 

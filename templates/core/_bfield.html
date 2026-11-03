@@ -1,0 +1,8 @@
+<div class="min-w-0">
+  <label for="{{ field.id_for_label }}" class="mb-2 block text-sm font-semibold text-[#241F18]">{{ field.label }}</label>
+  <div class="relative">
+    {{ field }}
+    {% if select %}<i data-lucide="chevron-down" class="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6b6557]"></i>{% endif %}
+  </div>
+  {% for e in field.errors %}<p class="mt-1.5 text-xs text-[#b3573a]">{{ e }}</p>{% endfor %}
+</div>

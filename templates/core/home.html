@@ -1,7 +1,6 @@
 {% extends "base.html" %}
-{% block title %}{{ hotel.name }} | Hotel in Enugu{% endblock %}
-{% block meta_description %}Comfortable rooms and suites in Enugu with all-day dining, a bar and a quiet sauna. See rooms and rates, then book your stay at {{ hotel.name }}.{% endblock %}
 {% load static site_tags humanize %}
+{% block title %}{{ hotel.name }}{% endblock %}
 {% block body_bg %}bg-[#FAF6EE]{% endblock %}
 {% block content %}
 
@@ -152,7 +151,7 @@
 
           <div>
             <div class="w-10 h-px bg-[#c6a15b] mb-5"></div>
-            <p class="font-display text-2xl leading-snug tracking-wide">What our guests say</p>
+            <p class="font-display text-2xl leading-snug tracking-wide">What guests say</p>
           </div>
 
           <!-- Animated Content Container -->
@@ -300,15 +299,15 @@
             {% st "cta.body" %}
           </p>
           <a
-            href="{% url 'contact' %}"
+            href="{% url 'contact' %}#book"
             class="inline-block mt-7 bg-[#c6a15b] text-[#16302A] font-medium text-sm px-6 py-3 rounded-full hover:bg-[#d8b876] transition-colors"
-            >Check availability</a
+            >Book now</a
           >
         </div>
         <img
           src="{% site_image 'home_cta' 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=900&q=80' %}"
           alt="Suite bedroom"
-          class="w-full h-64 md:h-full object-cover"
+          class="w-full h-64 md:h-86 object-cover"
         />
       </div>
     </section>

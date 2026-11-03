@@ -1,6 +1,8 @@
 import re
+from urllib.parse import quote
 
 from django import template
+from django.conf import settings
 from django.utils.html import conditional_escape, escape
 from django.utils.safestring import mark_safe
 
@@ -126,3 +128,48 @@ def site_video(context, slot, fallback=""):
 
     videos = _request_cache(context, "_site_videos", load)
     return videos.get(slot) or fallback
+
+
+def _digits(value):
+    return re.sub(r"\D", "", value or "")
+
+
+def _international(value):
+    """+234... digits, turning a local 0xxxxxxxxxx number into international form."""
+    d = _digits(value)
+    if d.startswith("00"):
+        d = d[2:]
+    elif d.startswith("0"):
+        d = getattr(settings, "PHONE_COUNTRY_CODE", "234") + d[1:]
+    return d
+
+
+@register.filter
+def tel_link(value):
+    """'+234 787 888 7788' -> 'tel:+2347878887788' (tap to call)."""
+    d = _international(value)
+    return f"tel:+{d}" if d else ""
+
+
+@register.simple_tag(takes_context=True)
+def whatsapp_url(context, number=""):
+    """Opens a WhatsApp chat with the hotel, with a short message ready to send."""
+    d = _international(number)
+    if not d:
+        return ""
+    hotel = context.get("hotel")
+    name = hotel.name if hotel else "your hotel"
+    return f"https://wa.me/{d}?text=" + quote(f"Hello {name}, I'd like to ask about a room.")
+
+
+def wa_link(number, text=""):
+    """https://wa.me link with an optional ready-typed message (for staff replying to a guest)."""
+    d = _international(number)
+    return f"https://wa.me/{d}" + (f"?text={quote(text)}" if text else "") if d else ""
+
+
+@register.simple_tag
+def new_booking_count():
+    from bookings.models import BookingRequest
+
+    return BookingRequest.objects.filter(status="new").count()

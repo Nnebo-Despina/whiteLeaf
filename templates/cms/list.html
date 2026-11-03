@@ -13,6 +13,13 @@
   {% endif %}
 </div>
 
+{% if status_tabs %}
+<div class="mb-4 flex gap-2 overflow-x-auto no-scrollbar">
+  {% for value, label, count, active in status_tabs %}
+  <a href="?status={{ value }}" class="shrink-0 rounded-full px-4 py-2 text-sm {% if active %}bg-[#16302A] text-white{% else %}bg-white text-[#5a5347] hover:bg-[#EAE3D0]{% endif %}">{{ label }} <span class="{% if active %}text-white/70{% else %}text-[#a49b89]{% endif %} text-xs">{{ count }}</span></a>
+  {% endfor %}
+</div>
+{% endif %}
 {% if sec.slug == "images" %}
 <div class="bg-white rounded-2xl p-4 mb-4 text-sm">
   {% if free_slots %}
@@ -31,14 +38,25 @@
       <div class="min-w-0 flex-1">
         <a href="{% url 'cms:edit' sec.slug r.pk %}" class="font-medium text-sm hover:underline block break-words line-clamp-2">{{ r.title }}</a>
         {% if r.subtitle %}<p class="text-xs text-[#8a8171] mt-0.5 break-words line-clamp-2">{{ r.subtitle }}</p>{% endif %}
-        {% if r.updated %}<p class="text-[11px] text-[#a49b89] mt-0.5">Updated {{ r.updated|date:"j M Y" }}</p>{% endif %}
+        {% if r.updated %}<p class="text-[11px] text-[#a49b89] mt-0.5">{% if r.booking %}Received{% else %}Updated{% endif %} {{ r.updated|date:"j M Y, g:i A" }}</p>{% endif %}
       </div>
     </div>
     {% with kind=r.status.0 label=r.status.1 %}
-    <span class="self-start sm:self-auto text-[11px] px-2.5 py-1 rounded-full whitespace-nowrap {% if kind == 'live' %}bg-[#E3EDE6] text-[#16302A]{% elif kind == 'draft' %}bg-[#F3E6C8] text-[#8a6a2a]{% else %}bg-[#EAE3D0] text-[#8a8171]{% endif %}">{{ label }}</span>
+    <span class="self-start sm:self-auto text-[11px] px-2.5 py-1 rounded-full whitespace-nowrap {% if kind == 'live' %}bg-[#E3EDE6] text-[#16302A]{% elif kind == 'draft' %}bg-[#F3E6C8] text-[#8a6a2a]{% elif kind == 'info' %}bg-[#DDE8F3] text-[#1b3a5c]{% else %}bg-[#EAE3D0] text-[#8a8171]{% endif %}">{{ label }}</span>
     {% endwith %}
     <div class="flex gap-2 items-center flex-wrap">
-      {% if sec.mode == "review" %}
+      {% if sec.mode == "booking" %}
+        {% if r.call %}<a href="{{ r.call }}" class="text-xs px-3.5 py-1.5 rounded-full bg-[#F4F0E4] hover:bg-[#EAE3D0]">Call</a>{% endif %}
+        {% if r.whatsapp %}<a href="{{ r.whatsapp }}" target="_blank" rel="noopener" class="text-xs px-3.5 py-1.5 rounded-full bg-[#E3F5E8] text-[#13683a] hover:bg-[#D3EEDB]">WhatsApp</a>{% endif %}
+        {% if r.raw_status == "new" %}
+        <form method="post" action="{% url 'cms:status' sec.slug r.pk %}">{% csrf_token %}<input type="hidden" name="action" value="contacted" /><button class="text-xs font-medium px-3.5 py-1.5 rounded-full bg-[#16302A] text-white hover:bg-[#1F4A3D]">Mark contacted</button></form>
+        {% elif r.raw_status == "contacted" %}
+        <form method="post" action="{% url 'cms:status' sec.slug r.pk %}">{% csrf_token %}<input type="hidden" name="action" value="confirmed" /><button class="text-xs font-medium px-3.5 py-1.5 rounded-full bg-[#16302A] text-white hover:bg-[#1F4A3D]">Confirm</button></form>
+        {% endif %}
+        {% if r.raw_status != "cancelled" %}
+        <form method="post" action="{% url 'cms:status' sec.slug r.pk %}" onsubmit="return confirm('Cancel this booking request?')">{% csrf_token %}<input type="hidden" name="action" value="cancelled" /><button class="text-xs px-3.5 py-1.5 rounded-full bg-[#F4F0E4] hover:bg-[#EAE3D0]">Cancel</button></form>
+        {% endif %}
+      {% elif sec.mode == "review" %}
         {% if r.status.0 != "live" %}
         <form method="post" action="{% url 'cms:status' sec.slug r.pk %}">{% csrf_token %}<input type="hidden" name="action" value="approve" /><button class="text-xs font-medium px-3.5 py-1.5 rounded-full bg-[#16302A] text-white hover:bg-[#1F4A3D]">Approve</button></form>
         {% endif %}

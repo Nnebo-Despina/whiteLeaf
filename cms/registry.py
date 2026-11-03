@@ -1,6 +1,7 @@
 """One entry per editable thing in the dashboard."""
 from dataclasses import dataclass, field
 
+from bookings.models import BookingRequest
 from core.models import FAQ, Attraction, Facility, Feature, SiteImage, SiteText, SiteVideo
 from reviews.models import Review
 
@@ -27,6 +28,10 @@ class Section:
 
 
 SECTIONS = [
+    Section("bookings", BookingRequest, "Bookings", "booking", "calendar-check",
+            "Booking requests from the website. Call or message guests, then mark them as confirmed.",
+            ["name", "phone", "check_in", "check_out", "adults", "children", "room", "status", "admin_note"],
+            mode="booking"),
     Section("text", SiteText, "Website text", "text block", "type",
             "Edit the wording shown across your pages.", [], mode="text", can_add=False, can_delete=False),
     Section("images", SiteImage, "Images", "image", "image",
@@ -39,7 +44,7 @@ SECTIONS = [
             ["name", "slug", "category", "tagline", "description", "card_note", "price_per_night", "bed",
              "bathrooms", "size_sqm", "has_wifi", "has_tv", "amenities", "cleanliness_note", "amenities_note",
              "availability", "is_featured", "order"], mode="status",
-            inlines=[(RoomImage, ["image", "external_url", "alt_text", "order"], "Photos")]),
+            inlines=[(RoomImage, ["image", "external_url", "video", "external_video_url", "alt_text", "order"], "Photos")]),
     Section("amenities", Amenity, "Room amenities", "amenity", "list-checks",
             "Create each amenity once, then tick it on any room.",
             ["title", "description", "order", "is_published"]),

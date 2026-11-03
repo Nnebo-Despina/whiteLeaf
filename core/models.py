@@ -24,8 +24,11 @@ class HotelInfo(TimeStamped):
     name = models.CharField(max_length=120, default="White Leaf Hotel & Suites")
     address = models.CharField(max_length=255, blank=True)
     phone = models.CharField(max_length=30, blank=True)
-    phone_secondary = models.CharField("Second phone / WhatsApp", max_length=30, blank=True)
-    email = models.EmailField(blank=True)
+    whatsapp_number = models.CharField(
+        "WhatsApp number", max_length=30, blank=True,
+        help_text="Leave blank to use the main phone number for WhatsApp too.",
+    )
+    email = models.EmailField(blank=True, help_text="Shown in the footer. Placeholder until you fill it in.")
     opening_hours = models.CharField(max_length=80, blank=True, default="Daily: 6am – 10pm")
     check_in_time = models.TimeField(default=datetime.time(14, 0))
     check_out_time = models.TimeField(default=datetime.time(12, 0))
@@ -34,6 +37,8 @@ class HotelInfo(TimeStamped):
         help_text="Google Maps > Share > Embed a map, then paste the iframe's src. Leave blank to search by address.",
     )
     directions_url = models.URLField("Get directions link", max_length=500, blank=True)
+    instagram_url = models.URLField("Instagram link", max_length=300, blank=True, help_text="Placeholder until you fill it in.")
+    facebook_url = models.URLField("Facebook link", max_length=300, blank=True, help_text="Placeholder until you fill it in.")
 
     class Meta:
         verbose_name_plural = "Hotel info"
@@ -48,6 +53,30 @@ class HotelInfo(TimeStamped):
     @classmethod
     def load(cls):
         return cls.objects.first() or cls()
+
+    # ---- footer / contact helpers. Placeholders show until real values are saved. ----
+    def _placeholder(self, value, fallback):
+        from django.conf import settings
+
+        if value:
+            return value
+        return fallback if getattr(settings, "SHOW_PLACEHOLDER_LINKS", True) else ""
+
+    @property
+    def email_display(self):
+        return self._placeholder(self.email, "info@yourhotel.com")
+
+    @property
+    def instagram_display(self):
+        return self._placeholder(self.instagram_url, "https://www.instagram.com/yourhotel")
+
+    @property
+    def facebook_display(self):
+        return self._placeholder(self.facebook_url, "https://www.facebook.com/yourhotel")
+
+    @property
+    def whatsapp_or_phone(self):
+        return self.whatsapp_number or self.phone
 
 
 class SiteText(TimeStamped):
@@ -98,6 +127,7 @@ class SiteImage(TimeStamped):
         ABOUT_DEDICATED = "about_dedicated", "About · 'Dedicated to serving you' backup photo"
         ABOUT_STAFF = "about_staff", "About · staff section photo"
 
+        BOOKING_PHOTO = "booking_photo", "Contact & Booking · photo beside the booking form"
         CONTACT_CTA_1 = "contact_cta_1", "Contact · call-to-action photo (left)"
         CONTACT_CTA_2 = "contact_cta_2", "Contact · call-to-action photo (right)"
 

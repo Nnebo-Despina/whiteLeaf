@@ -7,6 +7,8 @@ from django.views import View
 
 from core.models import HotelInfo, PublishStatus, SiteImage, SiteText, slot_limit
 from core.text_defaults import TEXT_DEFAULTS
+from bookings.models import BookingRequest
+from core.templatetags.site_tags import tel_link, wa_link
 from reviews.models import Review
 from rooms.models import Room
 
@@ -33,6 +35,9 @@ def _ensure_texts():
 
 def _form_class(model, fields, **kw):
     widgets = dict(kw.pop("widgets", {}))
+    for f in model._meta.fields:
+        if f.name in fields and f.get_internal_type() == "DateField":
+            widgets.setdefault(f.name, forms.DateInput(format="%Y-%m-%d", attrs={"type": "date"}))
     for f in model._meta.many_to_many:
         if f.name in fields:
             widgets.setdefault(f.name, forms.CheckboxSelectMultiple)
@@ -47,6 +52,19 @@ def _describe(section, obj):
         d.update(subtitle=(obj.draft_value or obj.value)[:90], status=("draft", "Draft waiting") if obj.has_draft else ("live", "Published"))
     elif s == "images":
         d.update(subtitle=obj.get_slot_display(), thumb=obj.image.url if obj.image else "")
+    elif s == "bookings":
+        hotel_name = HotelInfo.load().name
+        nights = f"{obj.nights} night{'s' if obj.nights != 1 else ''}"
+        guests = f"{obj.adults} adult{'s' if obj.adults != 1 else ''}" + (f", {obj.children} child{'ren' if obj.children != 1 else ''}" if obj.children else "")
+        d.update(
+            title=f"{obj.name} · {obj.check_in:%d %b} – {obj.check_out:%d %b %Y}",
+            subtitle=f"{obj.reference} · {obj.room_label} · {nights} · {guests} · {obj.phone}",
+            status={"new": ("draft", "New"), "contacted": ("info", "Contacted"),
+                    "confirmed": ("live", "Confirmed"), "cancelled": ("off", "Cancelled")}[obj.status],
+            updated=obj.created_at, booking=True, raw_status=obj.status,
+            call=tel_link(obj.phone),
+            whatsapp=wa_link(obj.phone, f"Hello {obj.name}, this is {hotel_name} about your booking request {obj.reference}."),
+        )
     elif s == "videos":
         d.update(subtitle=f"{obj.get_slot_display()} · {obj.video.name.rsplit('/', 1)[-1]}")
     elif s == "rooms":
@@ -79,6 +97,9 @@ class DashboardView(StaffRequiredMixin, View):
         pending = [{"kind": "review", "pk": r.pk, "title": f"Review from {r.display_name}", "when": r.created_at,
                     "section": "reviews", "action": "approve", "label": "Approve", "icon": "message-square"}
                    for r in Review.objects.filter(status="pending")[:5]]
+        pending = [{"kind": "booking", "pk": b.pk, "title": f"Booking: {b.name} ({b.check_in:%d %b})", "when": b.created_at,
+                    "section": "bookings", "action": "contacted", "label": "Mark contacted", "icon": "calendar-check"}
+                   for b in BookingRequest.objects.filter(status="new")[:6]] + pending
         pending += [{"kind": "text", "pk": t.pk, "title": f"Text: {t.label}", "when": t.updated_at,
                      "section": "text", "action": "publish", "label": "Publish", "icon": "type"}
                     for t in SiteText.objects.exclude(draft_value="") if t.has_draft][:5]
@@ -88,12 +109,12 @@ class DashboardView(StaffRequiredMixin, View):
         pending += [{"kind": "room", "pk": r.pk, "title": f"Room: {r.name}", "when": r.updated_at,
                      "section": "rooms", "action": "publish", "label": "Publish", "icon": "bed-double"}
                     for r in Room.objects.filter(status="draft")[:5]]
-        stats = [("bed-double", Room.published.count(), "Rooms listed"),
+        stats = [("calendar-check", BookingRequest.objects.filter(status="new").count(), "New bookings"),
+                 ("bed-double", Room.published.count(), "Rooms listed"),
                  ("message-square", Review.objects.filter(status="pending").count(), "Reviews to approve"),
-                 ("file-clock", len(pending), "Drafts waiting"),
+                 ("file-clock", len([p for p in pending if p["kind"] != "booking"]), "Drafts waiting"),
                  ("image", SiteImage.objects.filter(status="published").count(), "Live images"),
-                 ("message-circle", Review.objects.approved().count(), "Live reviews"),
-                 ("type", SiteText.objects.count(), "Text blocks")]
+                 ("message-circle", Review.objects.approved().count(), "Live reviews")]
         return render(request, "cms/dashboard.html", {"stats": stats, "pending": pending, "page": "dash", "sections": SECTIONS})
 
 
@@ -103,10 +124,18 @@ class SectionList(StaffRequiredMixin, View):
         if sec.slug == "text":
             _ensure_texts()
         qs = sec.model.objects.all()
+        status_tabs = None
         if sec.slug == "reviews":
             qs = qs.order_by("status", "-created_at")
+        if sec.slug == "bookings":
+            wanted = request.GET.get("status", "")
+            counts = {v: sec.model.objects.filter(status=v).count() for v, _ in BookingRequest.Status.choices}
+            status_tabs = [("", "All", sec.model.objects.count(), wanted == "")] + [
+                (v, label, counts[v], wanted == v) for v, label in BookingRequest.Status.choices]
+            if wanted in counts:
+                qs = qs.filter(status=wanted)
         rows = [_describe(sec, o) for o in qs]
-        ctx = {"sec": sec, "rows": rows, "page": sec.slug, "sections": SECTIONS}
+        ctx = {"sec": sec, "rows": rows, "page": sec.slug, "sections": SECTIONS, "status_tabs": status_tabs}
         if sec.slug == "images":
             used = {}
             for slot in SiteImage.objects.values_list("slot", flat=True):
@@ -201,20 +230,25 @@ class SectionStatus(StaffRequiredMixin, View):
         elif sec.mode == "review" and action in ("approve", "reject", "unpublish"):
             obj.status = {"approve": "approved", "reject": "rejected", "unpublish": "pending"}[action]
             obj.save()
+        elif sec.mode == "booking" and action in ("new", "contacted", "confirmed", "cancelled"):
+            obj.status = action
+            obj.save()
         elif sec.mode == "bool" and action in ("publish", "unpublish"):
             obj.is_published = action == "publish"
             obj.save()
         else:
             raise Http404
         messages.success(request, {"publish": "Published", "unpublish": "Unpublished", "approve": "Approved",
-                                   "reject": "Rejected"}[action])
+                                   "reject": "Rejected", "new": "Marked as new", "contacted": "Marked as contacted",
+                                   "confirmed": "Booking confirmed", "cancelled": "Booking cancelled"}[action])
         return redirect(request.POST.get("next") or reverse("cms:list", args=[sec.slug]))
 
 
 class HotelEdit(StaffRequiredMixin, View):
     def _form(self, request):
-        Form = _form_class(HotelInfo, ["name", "address", "phone", "phone_secondary", "email", "opening_hours",
-                                       "check_in_time", "check_out_time", "map_embed_url", "directions_url"],
+        Form = _form_class(HotelInfo, ["name", "address", "phone", "whatsapp_number", "email", "opening_hours",
+                                       "check_in_time", "check_out_time", "instagram_url", "facebook_url",
+                                       "map_embed_url", "directions_url"],
                            widgets={"check_in_time": forms.TimeInput(format="%H:%M", attrs={"type": "time"}),
                                     "check_out_time": forms.TimeInput(format="%H:%M", attrs={"type": "time"})})
         return Form(request.POST or None, instance=HotelInfo.objects.first())

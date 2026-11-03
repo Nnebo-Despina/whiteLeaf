@@ -7,7 +7,7 @@ NAV = [
     ("rooms", "Accommodations", ("rooms:list", "rooms:detail")),
     ("tariffs", "Tariffs", ("tariffs",)),
     ("about", "About", ("about",)),
-    ("contact", "Contact", ("contact",)),
+    ("contact", "Contact & Booking", ("contact",)),
 ]
 NAV_URLS = {"home": "home", "rooms": "rooms:list", "tariffs": "tariffs", "about": "about", "contact": "contact"}
 OVERLAY_PAGES = {"home", "about", "tariffs"}

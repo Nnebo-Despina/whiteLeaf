@@ -85,8 +85,22 @@ class Room(TimeStamped):
 
 class RoomImage(models.Model):
     room = models.ForeignKey(Room, related_name="images", on_delete=models.CASCADE)
+
     image = models.ImageField(upload_to="rooms/", blank=True)
     external_url = models.URLField("Or image link", max_length=500, blank=True)
+
+    video = models.FileField(
+        upload_to="rooms/videos/",
+        blank=True,
+        help_text="Upload an MP4 room video."
+    )
+    external_video_url = models.URLField(
+        "Or video link",
+        max_length=500,
+        blank=True,
+        help_text="Paste a video URL if you are not uploading a file."
+    )
+
     alt_text = models.CharField(max_length=160, blank=True)
     order = models.PositiveSmallIntegerField(default=0)
 
@@ -96,3 +110,11 @@ class RoomImage(models.Model):
     @property
     def image_url(self):
         return self.image.url if self.image else self.external_url
+
+    @property
+    def video_url(self):
+        return self.video.url if self.video else self.external_video_url
+
+    @property
+    def is_video(self):
+        return bool(self.video or self.external_video_url)

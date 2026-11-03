@@ -1,8 +1,6 @@
 {% extends "base.html" %}
-{% block title %}{{ room.name }} | {{ hotel.name }}, Enugu{% endblock %}
-{% block meta_description %}{{ room.tagline }}. {{ room.name }} at {{ hotel.name }} from NGN {{ room.price_per_night }} per night, with {{ room.bed|lower }} and {{ room.bathrooms }} bathroom{{ room.bathrooms|pluralize }}.{% endblock %}
-{% block og_image %}{% if room.cover_url|slice:':1' == '/' %}{{ request.scheme }}://{{ request.get_host }}{% endif %}{{ room.cover_url }}{% endblock %}
 {% load static site_tags humanize %}
+{% block title %}{{ room.name }} — White Leaf{% endblock %}
 {% block body_bg %}bg-white{% endblock %}
 {% block content %}
     <div class="h-20"></div>
@@ -22,6 +20,10 @@
         <h1 class="font-display text-5xl mt-6">{{ room.name }}</h1>
         <p class="text-sm text-[#5a5347] leading-relaxed mt-4 max-w-md">
           {% if room.description %}{{ room.description|emph|linebreaksbr }}{% else %}{{ room.tagline }}{% endif %}
+        </p>
+
+        <p class="font-display text-4xl mt-10">
+          {{ room.price_per_night|naira }}<span class="text-base font-body text-[#8a8171] font-normal">  / per night</span>{% if room.availability == "booked" %}<span class="ml-3 align-middle text-[11px] font-body px-2.5 py-1 rounded-full bg-[#F3E6C8] text-[#8a6a2a]">Fully booked</span>{% endif %}
         </p>
 
         {% if room.amenities.all %}
@@ -47,14 +49,12 @@
         </div>
         {% endif %}
 
-        <p class="font-display text-4xl mt-10">
-          {{ room.price_per_night|naira }}<span class="text-base font-body text-[#8a8171] font-normal">  / per night</span>{% if room.availability == "booked" %}<span class="ml-3 align-middle text-[11px] font-body px-2.5 py-1 rounded-full bg-[#F3E6C8] text-[#8a6a2a]">Fully booked</span>{% endif %}
-        </p>
+        
         <div class="mt-6">
           <a
-            href="{% url 'contact' %}"
+            href="{% url 'contact' %}?room={{ room.slug }}#book"
             class="inline-flex items-center gap-3 bg-[#16302A] text-white text-sm font-medium pl-5 pr-2 py-2 rounded-full hover:bg-[#1F4A3D] transition-colors"
-            >Contact us<span class="w-6 h-6 rounded-full bg-white/15 flex items-center justify-center"
+            >Book this room<span class="w-6 h-6 rounded-full bg-white/15 flex items-center justify-center"
               ><i data-lucide="arrow-right" class="w-3.5 h-3.5"></i></span
           ></a>
         </div>
@@ -67,20 +67,37 @@
           class="flex h-full overflow-x-auto snap-x snap-mandatory scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {% for img in room.images.all %}
-          <img
-            src="{{ img.image_url }}"
-            alt="{{ img.alt_text|default:room.name }}"
-            {% if not forloop.first %}loading="lazy"{% endif %}
-            class="slide w-full h-full shrink-0 snap-center object-cover"
-          />
+          <div class="slide w-full h-full shrink-0 snap-center relative">
+            {% if img.is_video %}
+            <video
+              src="{{ img.video_url }}"
+              class="w-full h-full object-cover"
+              controls
+              playsinline
+              preload="metadata"
+            ></video>
+            {% else %}
+            <img
+              src="{{ img.image_url }}"
+              alt="{{ img.alt_text|default:room.name }}"
+              {% if not forloop.first %}loading="lazy"{% endif %}
+              class="w-full h-full object-cover"
+            />
+            {% endif %}
+          </div>
           {% empty %}
-          <div class="slide w-full h-full shrink-0 bg-[#F2EFE5] flex items-center justify-center text-sm text-[#8a8171]">Photos coming soon</div>
+          <div class="slide w-full h-full shrink-0 bg-[#F2EFE5] flex items-center justify-center text-sm text-[#8a8171]">
+            Photos coming soon
+          </div>
           {% endfor %}
         </div>
 
         <div class="hidden group-has-[.slide:nth-child(2)]/g:block">
           <button
             id="room-prev"
+            type="button"
+            data-prev
+            onclick="event.stopPropagation()"
             class="absolute left-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 backdrop-blur flex items-center justify-center text-[#16302A] hover:bg-white transition-all
                   disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white/80"
             aria-label="Previous image"
@@ -89,6 +106,10 @@
           </button>
           <button
             id="room-next"
+            type="button"
+            data-next
+            onclick="event.stopPropagation()"
+
             class="absolute right-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 backdrop-blur flex items-center justify-center text-[#16302A] hover:bg-white transition-all
                   disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white/80"
             aria-label="Next image"
@@ -220,10 +241,72 @@
         };
 
         track.addEventListener('scroll', updateUI, { passive: true });
-        prev.onclick = () => goTo(current() - 1);
-        next.onclick = () => goTo(current() + 1);
+        prev.addEventListener("click", function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            goTo(current() - 1);
+        });
+
+        next.addEventListener("click", function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            goTo(current() + 1);
+        });
         updateUI();
+
+        const pauseVideos = () => {
+          track.querySelectorAll('video').forEach(video => video.pause());
+        };
+
+        track.addEventListener('scroll', pauseVideos, { passive: true });
       }
+      /* ---------- Custom video controls ---------- */
+
+document.querySelectorAll('.custom-video').forEach((container) => {
+    const video = container.querySelector('video');
+    const button = container.querySelector('[data-video-toggle]');
+    const playIcon = container.querySelector('[data-play-icon]');
+    const pauseIcon = container.querySelector('[data-pause-icon]');
+
+    if (!video || !button) return;
+
+    function updateVideoState() {
+        const playing = !video.paused && !video.ended;
+
+        container.classList.toggle('is-playing', playing);
+
+        playIcon.classList.toggle('hidden', playing);
+        pauseIcon.classList.toggle('hidden', !playing);
+
+        button.setAttribute(
+            'aria-label',
+            playing ? 'Pause video' : 'Play video'
+        );
+    }
+
+    function toggleVideo() {
+        if (video.paused || video.ended) {
+            video.play().catch(() => {
+                updateVideoState();
+            });
+        } else {
+            video.pause();
+        }
+    }
+
+    button.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleVideo();
+    });
+
+    video.addEventListener('click', toggleVideo);
+
+    video.addEventListener('play', updateVideoState);
+    video.addEventListener('pause', updateVideoState);
+    video.addEventListener('ended', updateVideoState);
+
+    updateVideoState();
+});
 </script>
 <script>
   (function () {
