@@ -99,6 +99,7 @@ import dj_database_url
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
+
 if DATABASE_URL:
     DATABASES = {
         "default": dj_database_url.parse(
@@ -114,6 +115,10 @@ else:
             "NAME": BASE_DIR / "db.sqlite3",
         }
     }
+
+dj_database_url.parse(DATABASE_URL, conn_max_age=60, ssl_require=True)
+# and add:
+DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
 
 # Recommended when using Supabase's transaction pooler
 DISABLE_SERVER_SIDE_CURSORS = True

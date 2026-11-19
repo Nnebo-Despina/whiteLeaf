@@ -3,6 +3,33 @@ import hmac
 
 from django.conf import settings
 from django.http import HttpResponse
+# core/middleware.py
+import time
+from django.db import connection
+from django.db.backends.utils import CursorWrapper
+
+class ServerTimingMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        start = time.perf_counter()
+        queries = []
+
+        def wrapper(execute, sql, params, many, context):
+            t = time.perf_counter()
+            try:
+                return execute(sql, params, many, context)
+            finally:
+                queries.append(time.perf_counter() - t)
+
+        with connection.execute_wrapper(wrapper):
+            response = self.get_response(request)
+
+        total = (time.perf_counter() - start) * 1000
+        db = sum(queries) * 1000
+        response["Server-Timing"] = f'total;dur={total:.0f}, db;dur={db:.0f}, q;desc="{len(queries)} queries"'
+        return response
 
 
 class StagingPasswordMiddleware:
