@@ -3,4 +3,5 @@
 staticfiles
 __pycache__/
 *.pyc
-
+db_backup.sqlite3
+white_leaf_backup.json
