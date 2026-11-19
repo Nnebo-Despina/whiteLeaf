@@ -145,6 +145,27 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+SUPABASE_S3_KEY_ID = os.environ.get("SUPABASE_S3_KEY_ID")
+
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
+
+if SUPABASE_S3_KEY_ID:  # only on Vercel; locally you keep using the media/ folder
+    STORAGES["default"] = {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": {
+            "bucket_name": "media",
+            "endpoint_url": os.environ["SUPABASE_S3_ENDPOINT"],
+            "access_key": SUPABASE_S3_KEY_ID,
+            "secret_key": os.environ["SUPABASE_S3_SECRET"],
+            "region_name": "eu-west-1",
+            "custom_domain": os.environ["SUPABASE_PUBLIC_MEDIA_DOMAIN"],
+            "querystring_auth": False,
+            "file_overwrite": False,
+        },
+    }
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.1/topics/i18n/

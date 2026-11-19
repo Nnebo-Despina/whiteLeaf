@@ -17,3 +17,5 @@ typing_extensions==4.16.0
 tzdata==2026.5
 whitenoise==6.12.0
 psycopg[binary]
+django-storages[s3]
+boto3
