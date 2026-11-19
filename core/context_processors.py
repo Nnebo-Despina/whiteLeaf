@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.cache import cache
 
 from core.models import HotelInfo
 
@@ -18,7 +19,7 @@ def site(request):
     view_name = match.view_name if match else ""
     active = next((key for key, _, names in NAV if view_name in names), "")
     return {
-        "hotel": HotelInfo.load(),
+        "hotel": cache.get_or_set("hotel_info", HotelInfo.load, 60),
         "nav_links": [(key, label, NAV_URLS[key], key == active) for key, label, _ in NAV],
         "nav_overlay": view_name in OVERLAY_PAGES,
         "allow_indexing": getattr(settings, "ALLOW_INDEXING", True),

@@ -1,12 +1,11 @@
 import base64
 import hmac
+import time
 
 from django.conf import settings
-from django.http import HttpResponse
-# core/middleware.py
-import time
 from django.db import connection
-from django.db.backends.utils import CursorWrapper
+from django.http import HttpResponse
+
 
 class ServerTimingMiddleware:
     def __init__(self, get_response):

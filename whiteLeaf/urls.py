@@ -15,12 +15,14 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.conf import settings
-from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 from django.contrib.sitemaps.views import sitemap
 from core.sitemaps import sitemaps
 from core.views import robots_txt
+from django.views.generic import RedirectView
+from django.conf.urls.static import static as media_static
+from django.templatetags.static import static as static_url
 
 urlpatterns = [
     path("manage/", include("cms.urls")),
@@ -31,7 +33,8 @@ urlpatterns = [
     path("", include("core.urls")),
     path("sitemap.xml", sitemap, {"sitemaps": sitemaps}, name="django.contrib.sitemaps.views.sitemap"),
     path("robots.txt", robots_txt, name="robots"),
+    path("favicon.ico", RedirectView.as_view(url=static_url("images/favicon.png"), permanent=True)),
 ]
 
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += media_static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
