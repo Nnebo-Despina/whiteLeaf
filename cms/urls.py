@@ -14,6 +14,7 @@ urlpatterns = [
     path("logout/", LogoutView.as_view(), name="logout"),
     path("", views.DashboardView.as_view(), name="dashboard"),
     path("hotel/", views.HotelEdit.as_view(), name="hotel"),
+    path("media-upload-token/", views.create_media_upload_token, name="media_upload_token"),
     path("<slug:section>/", views.SectionList.as_view(), name="list"),
     path("<slug:section>/new/", views.SectionEdit.as_view(), name="new"),
     path("<slug:section>/<int:pk>/", views.SectionEdit.as_view(), name="edit"),

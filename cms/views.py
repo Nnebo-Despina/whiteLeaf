@@ -1,21 +1,142 @@
+import json
+import os
+import uuid
+import urllib.error
+import urllib.parse
+import urllib.request
+
 from django import forms
+from django.conf import settings
+from django.contrib.auth.decorators import user_passes_test
 from django.contrib import messages
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views import View
+from django.views.decorators.http import require_POST
 
-from core.models import HotelInfo, PublishStatus, SiteImage, SiteText, slot_limit
+from core.models import HotelInfo, MAX_VIDEO_MB, PublishStatus, SiteImage, SiteText, slot_limit
 from core.text_defaults import TEXT_DEFAULTS
 from bookings.models import BookingRequest
 from core.templatetags.site_tags import tel_link, wa_link
 from reviews.models import Review
 from rooms.models import Room
 
-from .forms import SiteTextForm, StyledModelForm
+from .forms import DirectUploadModelForm, SiteTextForm
 from .mixins import StaffRequiredMixin
 from .registry import BY_SLUG, SECTIONS
 
+
+
+# Media is uploaded directly from the browser to Supabase Storage. Django only
+# issues a short-lived, single-object upload token and later saves the object path.
+IMAGE_MIME_TYPES = {
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".png": "image/png",
+    ".webp": "image/webp",
+    ".gif": "image/gif",
+}
+VIDEO_MIME_TYPES = {
+    ".mp4": "video/mp4",
+    ".webm": "video/webm",
+}
+MAX_IMAGE_UPLOAD_BYTES = 20 * 1024 * 1024
+MAX_VIDEO_UPLOAD_BYTES = MAX_VIDEO_MB * 1024 * 1024
+
+
+@user_passes_test(lambda user: user.is_active and user.is_staff, login_url="cms:login")
+@require_POST
+def create_media_upload_token(request):
+    """Return a signed TUS upload token for one image or video object."""
+    supabase_url = getattr(settings, "SUPABASE_URL", "").rstrip("/")
+    service_key = getattr(settings, "SUPABASE_SERVICE_ROLE_KEY", "")
+    public_key = getattr(settings, "SUPABASE_ANON_KEY", "")
+    bucket = getattr(settings, "SUPABASE_MEDIA_BUCKET", "media")
+
+    if not supabase_url or not service_key or not public_key:
+        return JsonResponse({"error": "Supabase media upload is not configured."}, status=503)
+
+    try:
+        payload = json.loads(request.body.decode("utf-8"))
+        kind = payload.get("kind")
+        filename = str(payload.get("filename", ""))
+        size = int(payload.get("size", 0))
+        supplied_type = str(payload.get("content_type", "")).lower()
+    except (UnicodeDecodeError, json.JSONDecodeError, TypeError, ValueError):
+        return JsonResponse({"error": "Invalid upload information."}, status=400)
+
+    extension = os.path.splitext(filename)[1].lower()
+    if kind == "image":
+        allowed_types = IMAGE_MIME_TYPES
+        max_bytes = MAX_IMAGE_UPLOAD_BYTES
+        folder = "cms/images"
+    elif kind == "video":
+        allowed_types = VIDEO_MIME_TYPES
+        max_bytes = MAX_VIDEO_UPLOAD_BYTES
+        folder = "cms/videos"
+    else:
+        return JsonResponse({"error": "Unsupported media type."}, status=400)
+
+    expected_type = allowed_types.get(extension)
+    if not expected_type:
+        return JsonResponse({"error": "Unsupported file extension."}, status=400)
+    if supplied_type not in ("", expected_type, "application/octet-stream"):
+        return JsonResponse({"error": "The file type does not match its extension."}, status=400)
+    if size <= 0 or size > max_bytes:
+        limit_mb = max_bytes // (1024 * 1024)
+        return JsonResponse({"error": f"File must be between 1 byte and {limit_mb} MB."}, status=400)
+
+    object_path = f"{folder}/{uuid.uuid4().hex}{extension}"
+    encoded_bucket = urllib.parse.quote(bucket, safe="")
+    encoded_path = urllib.parse.quote(object_path, safe="/")
+    sign_url = f"{supabase_url}/storage/v1/object/upload/sign/{encoded_bucket}/{encoded_path}"
+    sign_request = urllib.request.Request(
+        sign_url,
+        data=b"{}",
+        headers={
+            "Authorization": f"Bearer {service_key}",
+            "apikey": service_key,
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+
+    try:
+        with urllib.request.urlopen(sign_request, timeout=20) as response:
+            signed_data = json.loads(response.read().decode("utf-8"))
+
+        signed_url = signed_data.get("url") or signed_data.get("signedURL") or signed_data.get("signedUrl") or ""
+        token = signed_data.get("token")
+        if not token and signed_url:
+            token = urllib.parse.parse_qs(urllib.parse.urlparse(signed_url).query).get("token", [None])[0]
+        if not token:
+            return JsonResponse({"error": "Supabase did not return an upload token."}, status=502)
+
+        # Supabase recommends the direct storage hostname for TUS uploads.
+        configured_tus_endpoint = getattr(settings, "SUPABASE_TUS_ENDPOINT", "")
+        if configured_tus_endpoint:
+            tus_endpoint = configured_tus_endpoint.rstrip("/")
+        else:
+            hostname = urllib.parse.urlparse(supabase_url).hostname or ""
+            project_ref = hostname.split(".")[0]
+            if not project_ref or project_ref == hostname:
+                return JsonResponse({"error": "Could not determine the Supabase project reference."}, status=503)
+            tus_endpoint = f"https://{project_ref}.storage.supabase.co/storage/v1/upload/resumable"
+
+        return JsonResponse({
+            "token": token,
+            "path": object_path,
+            "bucket": bucket,
+            "api_key": public_key,
+            "upload_endpoint": tus_endpoint,
+            "content_type": expected_type,
+        })
+    except urllib.error.HTTPError as error:
+        # Keep Supabase credentials and raw provider responses out of the browser.
+        return JsonResponse({"error": "Supabase could not create an upload permission."}, status=502)
+    except (urllib.error.URLError, TimeoutError, ValueError, json.JSONDecodeError):
+        return JsonResponse({"error": "Unable to contact Supabase Storage."}, status=502)
 
 def _section(slug):
     try:
@@ -41,7 +162,7 @@ def _form_class(model, fields, **kw):
     for f in model._meta.many_to_many:
         if f.name in fields:
             widgets.setdefault(f.name, forms.CheckboxSelectMultiple)
-    return forms.modelform_factory(model, form=StyledModelForm, fields=fields, widgets=widgets, **kw)
+    return forms.modelform_factory(model, form=DirectUploadModelForm, fields=fields, widgets=widgets, **kw)
 
 
 def _describe(section, obj):
@@ -155,7 +276,7 @@ class SectionEdit(StaffRequiredMixin, View):
         form = Form(request.POST or None, request.FILES or None, instance=obj)
         formsets = []
         for child, fields, heading in sec.inlines:
-            FS = forms.inlineformset_factory(sec.model, child, form=StyledModelForm, fields=fields, extra=1, can_delete=True)
+            FS = forms.inlineformset_factory(sec.model, child, form=DirectUploadModelForm, fields=fields, extra=1, can_delete=True)
             formsets.append((heading, FS(request.POST or None, request.FILES or None, instance=obj, prefix=child.__name__.lower())))
         return form, formsets
 
