@@ -1,0 +1,89 @@
+
+{% extends "base.html" %}
+
+{% block title %}Page Not Found | White Leaf Hotel{% endblock %}
+
+{% block body_bg %}bg-[#FAF6EE]{% endblock %}
+
+{% block content %}
+
+<section class="min-h-[80vh] flex items-center justify-center px-6 py-20">
+
+    <div class="max-w-3xl w-full text-center">
+
+        <!-- Decorative label -->
+        <div class="flex items-center justify-center gap-3 mb-8">
+            <span class="w-10 h-px bg-[#c6a15b]"></span>
+            <p class="text-xs tracking-[0.3em] uppercase text-[#8a8171]">
+                White Leaf Hotel & Suites
+            </p>
+            <span class="w-10 h-px bg-[#c6a15b]"></span>
+        </div>
+
+        <!-- 404 -->
+        <div class="relative mb-6">
+            <h1 class="font-display text-[140px] sm:text-[190px] leading-none text-[#16302A] tracking-tight">
+                404
+            </h1>
+
+            <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-[#c6a15b] flex items-center justify-center shadow-xl">
+                    <i data-lucide="leaf" class="w-9 h-9 text-[#16302A]"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Message -->
+        <div class="max-w-xl mx-auto">
+            <p class="text-xs uppercase tracking-[0.25em] text-[#c6a15b] font-medium mb-4">
+                A little detour
+            </p>
+
+            <h2 class="font-display text-3xl sm:text-4xl text-[#16302A] leading-tight">
+                Well, this is an unexpected turn.
+            </h2>
+
+            <p class="mt-5 text-[#5a5347] text-sm sm:text-base leading-relaxed">
+                The page you're looking for seems to have wandered off.
+                Perhaps it has checked into another room. Let's get you
+                back to somewhere familiar.
+            </p>
+        </div>
+
+        <!-- Actions -->
+        <div class="mt-9 flex flex-col sm:flex-row items-center justify-center gap-4">
+
+            <a
+                href="/"
+                class="inline-flex items-center justify-center gap-3 bg-[#16302A] text-white text-sm font-medium px-7 py-3.5 rounded-full hover:bg-[#24483F] transition-colors w-full sm:w-auto"
+            >
+                <i data-lucide="home" class="w-4 h-4"></i>
+                Return Home
+            </a>
+
+            <a
+                href="/accommodations/"
+                class="inline-flex items-center justify-center gap-3 border border-[#16302A]/20 text-[#16302A] text-sm font-medium px-7 py-3.5 rounded-full hover:bg-[#EAE7DA] transition-colors w-full sm:w-auto"
+            >
+                Explore Our Rooms
+                <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+            </a>
+
+        </div>
+
+        <!-- Bottom decoration -->
+        <div class="mt-16 flex items-center justify-center gap-4">
+            <span class="w-12 h-px bg-[#c6a15b]/50"></span>
+            <i data-lucide="leaf" class="w-4 h-4 text-[#c6a15b]"></i>
+            <span class="w-12 h-px bg-[#c6a15b]/50"></span>
+        </div>
+
+        <p class="mt-5 text-[11px] tracking-widest uppercase text-[#8a8171]">
+            Your comfort is always a click away.
+        </p>
+
+    </div>
+
+</section>
+
+{% endblock %}

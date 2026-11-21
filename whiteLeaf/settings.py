@@ -47,7 +47,7 @@ INSTALLED_APPS = [
     "reviews", 
     "cms",
     "bookings",
-
+    "storages",
     
 ]
 
@@ -148,11 +148,15 @@ AUTH_PASSWORD_VALIDATORS = [
 SUPABASE_S3_KEY_ID = os.environ.get("SUPABASE_S3_KEY_ID")
 
 STORAGES = {
-    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
-    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
 }
 
-if SUPABASE_S3_KEY_ID:  # only on Vercel; locally you keep using the media/ folder
+if SUPABASE_S3_KEY_ID:
     STORAGES["default"] = {
         "BACKEND": "storages.backends.s3.S3Storage",
         "OPTIONS": {
@@ -166,6 +170,17 @@ if SUPABASE_S3_KEY_ID:  # only on Vercel; locally you keep using the media/ fold
             "file_overwrite": False,
         },
     }
+
+
+# Supabase direct browser uploads
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
+SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY", "")
+
+SUPABASE_MEDIA_BUCKET = "media"
+
+# Maximum video size: 500 MB
+ROOM_VIDEO_MAX_SIZE = 500 * 1024 * 1024
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.1/topics/i18n/
@@ -190,7 +205,7 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles" 
 
-MEDIA_URL = "media/"
+MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 TIME_ZONE = "Africa/Lagos"
