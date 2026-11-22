@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import uuid
 import urllib.error
@@ -30,6 +31,7 @@ from .mixins import StaffRequiredMixin
 from .registry import BY_SLUG, SECTIONS
 
 
+logger = logging.getLogger(__name__)
 
 # Media is uploaded directly from the browser to Supabase Storage. Django only
 # issues a short-lived, single-object upload token and later saves the object path.
@@ -159,10 +161,16 @@ def create_media_upload_token(request):
             "content_type": expected_type,
         })
     except urllib.error.HTTPError as error:
-        # Keep Supabase credentials and raw provider responses out of the browser.
-        return JsonResponse({"error": "Supabase could not create an upload permission."}, status=502)
-    except (urllib.error.URLError, TimeoutError, ValueError, json.JSONDecodeError):
-        return JsonResponse({"error": "Unable to contact Supabase Storage."}, status=502)
+        try:
+            body = error.read().decode("utf-8", "replace")[:300]
+        except Exception:
+            body = ""
+        logger.error("Supabase sign request failed: %s %s", error.code, body)
+        return JsonResponse({"error": f"Supabase refused to create the upload permission (HTTP {error.code}): {body}"}, status=502)
+    except Exception as error:  # staff-only endpoint: show the real cause instead of a bare 500
+        logger.exception("Media upload token failed")
+        return JsonResponse({"error": f"Upload setup failed on the server: {type(error).__name__}: {str(error)[:200]}"}, status=502)
+
 
 def _section(slug):
     try:

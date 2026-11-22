@@ -67,7 +67,7 @@
 
         const data = await response.json().catch(() => ({}));
         if (!response.ok || !data.token || !data.upload_endpoint || !data.path) {
-            throw new Error(data.error || "Could not start the upload. Refresh the page, log in again if asked, and retry.");
+            throw new Error(data.error || `Could not start the upload (server returned ${response.status}). Check the Vercel runtime logs for the error.`);
         }
         return data;
     }
