@@ -84,6 +84,8 @@ def create_media_upload_token(request):
 
     if not supabase_url or not service_key or not public_key:
         return JsonResponse({"error": "Supabase media upload is not configured."}, status=503)
+    if not supabase_url.startswith("https://"):
+        return JsonResponse({"error": "SUPABASE_URL must look like https://YOUR-PROJECT-REF.supabase.co. Fix it in your Vercel environment variables."}, status=503)
 
     try:
         payload = json.loads(request.body.decode("utf-8"))

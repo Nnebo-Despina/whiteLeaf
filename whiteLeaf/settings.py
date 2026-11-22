@@ -173,7 +173,24 @@ if SUPABASE_S3_KEY_ID:
 
 
 # Supabase direct browser uploads
-SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
+def _clean_supabase_url(raw):
+    """Accepts https://<ref>.supabase.co, and also repairs a pasted dashboard link or a missing https://."""
+    import re
+    raw = (raw or "").strip().strip("\"'").rstrip("/")
+    if not raw:
+        return ""
+    dashboard = re.search(r"/dashboard/project/([a-z0-9]+)", raw)
+    if dashboard:
+        return f"https://{dashboard.group(1)}.supabase.co"
+    if not raw.startswith(("http://", "https://")):
+        raw = "https://" + raw
+    for suffix in ("/rest/v1", "/storage/v1", "/auth/v1"):
+        if raw.endswith(suffix):
+            raw = raw[: -len(suffix)]
+    return raw.rstrip("/")
+
+
+SUPABASE_URL = _clean_supabase_url(os.environ.get("SUPABASE_URL", ""))
 SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
 SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY", "")
 
