@@ -1,7 +1,7 @@
 /*
  * Direct-to-Supabase uploads, shared by the /manage/ dashboard and the Django admin (backstage).
  *
- * The browser sends the file straight to Supabase (resumable upload). Django/Vercel only ever
+ * The browser sends the file straight to Supabase (signed upload URL). Django/Vercel only ever
  * receive the saved object path, so the Vercel 4.5 MB request limit can never be hit.
  *
  * Works through event delegation, so rows added later (e.g. "Add another Room image" in the
@@ -72,28 +72,30 @@
         return data;
     }
 
-    function tusUpload(file, info, contentType, onProgress) {
-        if (!window.tus || !window.tus.Upload) {
-            return Promise.reject(new Error("The upload library did not load. Check your connection, refresh and try again."));
-        }
+    // Same request supabase-js makes for uploadToSignedUrl(): PUT multipart form to the signed URL.
+    function signedUpload(file, info, onProgress) {
         return new Promise((resolve, reject) => {
-            new window.tus.Upload(file, {
-                endpoint: info.upload_endpoint,
-                headers: { apikey: info.api_key, "x-signature": info.token },
-                metadata: {
-                    bucketName: info.bucket,
-                    objectName: info.path,
-                    contentType,
-                    cacheControl: "3600",
-                },
-                chunkSize: 6 * 1024 * 1024, // Supabase requires exactly 6 MB chunks
-                uploadDataDuringCreation: true,
-                removeFingerprintOnSuccess: true,
-                retryDelays: [0, 3000, 5000, 10000, 20000],
-                onError: reject,
-                onProgress: (sent, total) => onProgress(Math.min(100, Math.round((sent / total) * 100))),
-                onSuccess: resolve,
-            }).start();
+            const body = new FormData();
+            body.append("cacheControl", "3600");
+            body.append("", file);
+
+            const xhr = new XMLHttpRequest();
+            xhr.open("PUT", info.signed_upload_url);
+            if (info.api_key) {
+                xhr.setRequestHeader("apikey", info.api_key);
+                if (info.api_key.split(".").length === 3) xhr.setRequestHeader("Authorization", `Bearer ${info.api_key}`);
+            }
+            xhr.upload.onprogress = e => {
+                if (e.lengthComputable) onProgress(Math.min(100, Math.round((e.loaded / e.total) * 100)));
+            };
+            xhr.onload = () => {
+                if (xhr.status >= 200 && xhr.status < 300) return resolve();
+                let detail = (xhr.responseText || "").slice(0, 200);
+                if (xhr.status === 413) detail += " The file is bigger than your Supabase upload limit.";
+                reject(new Error(`Supabase said ${xhr.status}: ${detail}`));
+            };
+            xhr.onerror = () => reject(new Error("Network error while sending the file to Supabase. Check your connection and try again."));
+            xhr.send(body);
         });
     }
 
@@ -144,7 +146,7 @@
         try {
             const info = await requestToken(input, form, file, contentType);
             say(input, "Uploading: 0%");
-            await tusUpload(file, info, contentType, pct => say(input, `Uploading: ${pct}%`));
+            await signedUpload(file, info, pct => say(input, `Uploading: ${pct}%`));
             pathField.value = info.path;
             input.value = ""; // the file itself is never posted to Django
             say(input, "Upload complete. Click Save to finish.", "ok");

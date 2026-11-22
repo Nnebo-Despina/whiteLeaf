@@ -83,7 +83,7 @@ def create_media_upload_token(request):
     bucket = getattr(settings, "SUPABASE_MEDIA_BUCKET", "media")
 
     if not supabase_url or not service_key or not public_key:
-        return JsonResponse({"error": "Supabase media upload is not configured."}, status=503)
+        return JsonResponse({"error": "Supabase media upload is not configured (check SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY and SUPABASE_ANON_KEY)."}, status=503)
     if not supabase_url.startswith("https://"):
         return JsonResponse({"error": "SUPABASE_URL must look like https://YOUR-PROJECT-REF.supabase.co. Fix it in your Vercel environment variables."}, status=503)
 
@@ -143,6 +143,14 @@ def create_media_upload_token(request):
         if not token:
             return JsonResponse({"error": "Supabase did not return an upload token."}, status=502)
 
+        # Classic signed upload URL (what supabase-js uploadToSignedUrl uses): PUT the file here.
+        if signed_url.startswith("http"):
+            signed_upload_url = signed_url
+        elif signed_url:
+            signed_upload_url = f"{supabase_url}/storage/v1{signed_url if signed_url.startswith('/') else '/' + signed_url}"
+        else:
+            signed_upload_url = f"{sign_url}?token={urllib.parse.quote(token, safe='')}"
+
         # Supabase recommends the direct storage hostname for TUS uploads.
         configured_tus_endpoint = getattr(settings, "SUPABASE_TUS_ENDPOINT", "")
         if configured_tus_endpoint:
@@ -158,6 +166,7 @@ def create_media_upload_token(request):
             "token": token,
             "path": object_path,
             "bucket": bucket,
+"signed_upload_url": signed_upload_url,
             "api_key": public_key,
             "upload_endpoint": tus_endpoint,
             "content_type": expected_type,
