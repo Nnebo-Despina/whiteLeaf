@@ -108,7 +108,7 @@ class Command(BaseCommand):
     def handle(self, *args, **opts):
         if not HotelInfo.objects.exists():
             HotelInfo.objects.create(
-                name="White Leaf Hotel & Suites",
+                name="White Leaf Hotel Suites & Apartments",
                 address="No. 35 Adrere Street, Independence Layout, Enugu",
                 phone="+234 787 8887 788", opening_hours="Daily: 6am – 10pm",
                 check_in_time=datetime.time(14, 0), check_out_time=datetime.time(12, 0))

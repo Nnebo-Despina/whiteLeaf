@@ -21,7 +21,7 @@ class PublishStatus(models.TextChoices):
 class HotelInfo(TimeStamped):
     """Exactly one row. Feeds the nav, footer, contact page and tariff text."""
 
-    name = models.CharField(max_length=120, default="White Leaf Hotel & Suites")
+    name = models.CharField(max_length=120, default="White Leaf Hotel Suites & Apartments")
     address = models.CharField(max_length=255, blank=True)
     phone = models.CharField(max_length=30, blank=True)
     whatsapp_number = models.CharField(
