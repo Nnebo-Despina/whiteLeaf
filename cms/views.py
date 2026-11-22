@@ -6,9 +6,12 @@ import urllib.parse
 import urllib.request
 
 from django import forms
+from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib import messages
+from django.core.exceptions import FieldDoesNotExist
+from django.db import models
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -44,6 +47,29 @@ VIDEO_MIME_TYPES = {
 MAX_IMAGE_UPLOAD_BYTES = 20 * 1024 * 1024
 MAX_VIDEO_UPLOAD_BYTES = MAX_VIDEO_MB * 1024 * 1024
 
+# Only file fields on these apps may be uploaded to.
+UPLOAD_APPS = {"core", "rooms"}
+
+
+def _resolve_upload_target(target):
+    """'rooms.roomimage.video' -> ('video', 'rooms/videos').
+
+    The folder always comes from the model field's own upload_to, so files land in
+    media/site, media/rooms, media/rooms/videos, media/feature ... exactly like the
+    ones that already exist. The browser never chooses the folder.
+    """
+    try:
+        app_label, model_name, field_name = str(target).lower().split(".")
+        if app_label not in UPLOAD_APPS:
+            return None
+        field = apps.get_model(app_label, model_name)._meta.get_field(field_name)
+    except (ValueError, LookupError, FieldDoesNotExist):
+        return None
+    if not isinstance(field, models.FileField) or not isinstance(field.upload_to, str):
+        return None
+    kind = "video" if field_name == "video" else "image"
+    return kind, field.upload_to.strip("/")
+
 
 @user_passes_test(lambda user: user.is_active and user.is_staff, login_url="cms:login")
 @require_POST
@@ -59,7 +85,7 @@ def create_media_upload_token(request):
 
     try:
         payload = json.loads(request.body.decode("utf-8"))
-        kind = payload.get("kind")
+        target = payload.get("target", "")
         filename = str(payload.get("filename", ""))
         size = int(payload.get("size", 0))
         supplied_type = str(payload.get("content_type", "")).lower()
@@ -67,16 +93,16 @@ def create_media_upload_token(request):
         return JsonResponse({"error": "Invalid upload information."}, status=400)
 
     extension = os.path.splitext(filename)[1].lower()
+    resolved = _resolve_upload_target(target)
+    if not resolved:
+        return JsonResponse({"error": "This upload field is not recognised. Refresh the page and try again."}, status=400)
+    kind, folder = resolved
     if kind == "image":
         allowed_types = IMAGE_MIME_TYPES
         max_bytes = MAX_IMAGE_UPLOAD_BYTES
-        folder = "cms/images"
-    elif kind == "video":
+    else:
         allowed_types = VIDEO_MIME_TYPES
         max_bytes = MAX_VIDEO_UPLOAD_BYTES
-        folder = "cms/videos"
-    else:
-        return JsonResponse({"error": "Unsupported media type."}, status=400)
 
     expected_type = allowed_types.get(extension)
     if not expected_type:

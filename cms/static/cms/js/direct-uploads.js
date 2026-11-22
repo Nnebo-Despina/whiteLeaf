@@ -1,195 +1,186 @@
+/*
+ * Direct-to-Supabase uploads, shared by the /manage/ dashboard and the Django admin (backstage).
+ *
+ * The browser sends the file straight to Supabase (resumable upload). Django/Vercel only ever
+ * receive the saved object path, so the Vercel 4.5 MB request limit can never be hit.
+ *
+ * Works through event delegation, so rows added later (e.g. "Add another Room image" in the
+ * admin) are handled automatically.
+ */
 (() => {
     "use strict";
 
-    function getCsrfToken(form) {
-        const tokenInput = form.querySelector('input[name="csrfmiddlewaretoken"]');
-        if (tokenInput) return tokenInput.value;
+    const SELECTOR = 'input[type="file"][data-upload-target]';
 
-        const cookie = document.cookie.split(";").map(value => value.trim())
-            .find(value => value.startsWith("csrftoken="));
+    const IMAGES = { ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp", ".gif": "image/gif" };
+    const VIDEOS = { ".mp4": "video/mp4", ".webm": "video/webm" };
+
+    function csrfToken(form) {
+        const field = form.querySelector('input[name="csrfmiddlewaretoken"]');
+        if (field) return field.value;
+        const cookie = document.cookie.split(";").map(v => v.trim()).find(v => v.startsWith("csrftoken="));
         return cookie ? decodeURIComponent(cookie.slice("csrftoken=".length)) : "";
     }
 
-    function extensionOf(filename) {
-        const dot = filename.lastIndexOf(".");
-        return dot >= 0 ? filename.slice(dot).toLowerCase() : "";
+    function extensionOf(name) {
+        const dot = name.lastIndexOf(".");
+        return dot >= 0 ? name.slice(dot).toLowerCase() : "";
     }
 
-    function expectedMime(kind, extension) {
-        const images = {
-            ".jpg": "image/jpeg",
-            ".jpeg": "image/jpeg",
-            ".png": "image/png",
-            ".webp": "image/webp",
-            ".gif": "image/gif",
-        };
-        const videos = {
-            ".mp4": "video/mp4",
-            ".webm": "video/webm",
-        };
-        return (kind === "video" ? videos : images)[extension] || "";
+    function statusFor(input) {
+        if (!input._uploadStatus) {
+            const p = document.createElement("p");
+            p.className = "direct-upload-status";
+            p.style.cssText = "margin-top:8px;font-size:12px;color:#8a8171";
+            p.setAttribute("role", "status");
+            input.insertAdjacentElement("afterend", p);
+            input._uploadStatus = p;
+        }
+        return input._uploadStatus;
     }
 
-    function makeStatus(input) {
-        const status = document.createElement("p");
-        status.className = "direct-upload-status mt-2 text-xs text-[#8a8171]";
-        status.setAttribute("role", "status");
-        input.insertAdjacentElement("afterend", status);
-        return status;
+    function say(input, message, state) {
+        const p = statusFor(input);
+        p.textContent = message;
+        p.style.color = state === "error" ? "#b3261e" : state === "ok" ? "#2e7d32" : "#8a8171";
     }
 
-    async function requestUploadToken(form, file, kind, contentType) {
-        const endpoint = form.dataset.uploadTokenUrl;
+    function tokenUrlFor(input, form) {
+        return input.dataset.uploadTokenUrl || form.dataset.uploadTokenUrl || "";
+    }
+
+    async function requestToken(input, form, file, contentType) {
+        const endpoint = tokenUrlFor(input, form);
         if (!endpoint) throw new Error("The upload endpoint is missing from this form.");
 
         const response = await fetch(endpoint, {
             method: "POST",
             credentials: "same-origin",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": getCsrfToken(form),
-            },
+            headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken(form) },
             body: JSON.stringify({
+                target: input.dataset.uploadTarget,
                 filename: file.name,
                 size: file.size,
                 content_type: contentType,
-                kind,
             }),
         });
 
         const data = await response.json().catch(() => ({}));
         if (!response.ok || !data.token || !data.upload_endpoint || !data.path) {
-            throw new Error(data.error || "Your admin session may have expired, or Supabase did not return an upload token. Refresh and try again.");
+            throw new Error(data.error || "Could not start the upload. Refresh the page, log in again if asked, and retry.");
         }
         return data;
     }
 
-    function uploadWithTus(file, uploadData, contentType, onProgress) {
+    function tusUpload(file, info, contentType, onProgress) {
         if (!window.tus || !window.tus.Upload) {
-            return Promise.reject(new Error("The resumable upload library did not load. Refresh and try again."));
+            return Promise.reject(new Error("The upload library did not load. Check your connection, refresh and try again."));
         }
-
         return new Promise((resolve, reject) => {
-            const upload = new window.tus.Upload(file, {
-                endpoint: uploadData.upload_endpoint,
-                headers: {
-                    apikey: uploadData.api_key,
-                    "x-signature": uploadData.token,
-                },
+            new window.tus.Upload(file, {
+                endpoint: info.upload_endpoint,
+                headers: { apikey: info.api_key, "x-signature": info.token },
                 metadata: {
-                    bucketName: uploadData.bucket,
-                    objectName: uploadData.path,
+                    bucketName: info.bucket,
+                    objectName: info.path,
                     contentType,
                     cacheControl: "3600",
                 },
-                chunkSize: 6 * 1024 * 1024,
+                chunkSize: 6 * 1024 * 1024, // Supabase requires exactly 6 MB chunks
                 uploadDataDuringCreation: true,
                 removeFingerprintOnSuccess: true,
                 retryDelays: [0, 3000, 5000, 10000, 20000],
-                onError(error) {
-                    reject(error);
-                },
-                onProgress(bytesUploaded, bytesTotal) {
-                    const percentage = Math.min(100, Math.round((bytesUploaded / bytesTotal) * 100));
-                    onProgress(percentage);
-                },
-                onSuccess() {
-                    resolve();
-                },
-            });
-
-            upload.start();
+                onError: reject,
+                onProgress: (sent, total) => onProgress(Math.min(100, Math.round((sent / total) * 100))),
+                onSuccess: resolve,
+            }).start();
         });
     }
 
-    function setupUploadInput(input, form) {
-        const status = makeStatus(input);
-        const hiddenName = input.name.replace(/_upload$/, "");
-        const hiddenPath = form.elements.namedItem(hiddenName);
+    function describeError(error) {
+        let detail = "";
+        try {
+            const res = error.originalResponse;
+            if (res) {
+                const code = res.getStatus();
+                detail = ` (Supabase said ${code}: ${(res.getBody() || "").slice(0, 160)})`;
+                if (code === 413) detail += " The file is bigger than your Supabase upload limit.";
+            }
+        } catch (e) { /* ignore */ }
+        return (error.message || "Upload failed.") + detail;
+    }
 
-        if (!hiddenPath || !("value" in hiddenPath)) {
-            status.textContent = "Upload field is not connected to its saved path. Please contact the site developer.";
-            status.classList.add("text-red-700");
-            input.disabled = true;
+    async function handleChange(input) {
+        const form = input.closest("form");
+        const file = input.files && input.files[0];
+        if (!form || !file) return;
+
+        // The saved object path lives in a hidden field with the same name minus "_upload".
+        const pathField = form.elements.namedItem(input.name.replace(/_upload$/, ""));
+        if (!pathField || !("value" in pathField)) {
+            say(input, "This upload box is not connected to its path field. Please tell the developer.", "error");
+            input.value = "";
             return;
         }
 
-        input.addEventListener("change", async () => {
-            const file = input.files && input.files[0];
-            if (!file) return;
+        const kind = input.dataset.mediaKind === "video" ? "video" : "image";
+        const contentType = (kind === "video" ? VIDEOS : IMAGES)[extensionOf(file.name)];
+        const maxBytes = Number(input.dataset.maxBytes || 0);
 
-            const kind = input.dataset.mediaKind || "image";
-            const extension = extensionOf(file.name);
-            const contentType = expectedMime(kind, extension);
-            const maxBytes = Number(input.dataset.maxBytes || 0);
+        if (!contentType) {
+            say(input, kind === "video" ? "Choose an MP4 or WebM video." : "Choose a JPG, PNG, WEBP or GIF image.", "error");
+            input.value = "";
+            return;
+        }
+        if (maxBytes && file.size > maxBytes) {
+            say(input, `This file is too large. Maximum size: ${Math.round(maxBytes / 1048576)} MB.`, "error");
+            input.value = "";
+            return;
+        }
 
-            if (!contentType) {
-                status.textContent = kind === "video"
-                    ? "Choose an MP4 or WebM video."
-                    : "Choose a JPG, PNG, WEBP or GIF image.";
-                status.classList.add("text-red-700");
-                input.value = "";
-                return;
-            }
-
-            if (file.type && file.type !== contentType && file.type !== "application/octet-stream") {
-                status.textContent = "The selected file type does not match its extension.";
-                status.classList.add("text-red-700");
-                input.value = "";
-                return;
-            }
-
-            if (maxBytes && file.size > maxBytes) {
-                status.textContent = `This file is too large. Maximum size: ${Math.round(maxBytes / (1024 * 1024))} MB.`;
-                status.classList.add("text-red-700");
-                input.value = "";
-                return;
-            }
-
-            input.dataset.uploading = "true";
-            input.disabled = true;
-            status.classList.remove("text-red-700", "text-green-700");
-            status.textContent = "Preparing secure upload...";
-
-            try {
-                const uploadData = await requestUploadToken(form, file, kind, contentType);
-                status.textContent = "Uploading: 0%";
-
-                await uploadWithTus(file, uploadData, contentType, percentage => {
-                    status.textContent = `Uploading: ${percentage}%`;
-                });
-
-                // The hidden model field receives only the Supabase object key.
-                hiddenPath.value = uploadData.path;
-                input.value = ""; // Never let the original file be posted to Django/Vercel.
-                status.textContent = "Upload complete. Save this form to finish.";
-                status.classList.add("text-green-700");
-            } catch (error) {
-                console.error("Supabase direct upload failed:", error);
-                status.textContent = error.message || "Upload failed. Please try again.";
-                status.classList.add("text-red-700");
-                input.value = "";
-            } finally {
-                input.dataset.uploading = "false";
-                input.disabled = false;
-            }
-        });
+        input.dataset.uploading = "true";
+        input.disabled = true;
+        say(input, "Preparing upload...");
+        try {
+            const info = await requestToken(input, form, file, contentType);
+            say(input, "Uploading: 0%");
+            await tusUpload(file, info, contentType, pct => say(input, `Uploading: ${pct}%`));
+            pathField.value = info.path;
+            input.value = ""; // the file itself is never posted to Django
+            say(input, "Upload complete. Click Save to finish.", "ok");
+        } catch (error) {
+            console.error("Direct upload failed:", error);
+            say(input, describeError(error), "error");
+            input.value = "";
+        } finally {
+            input.dataset.uploading = "false";
+            input.disabled = false;
+        }
     }
 
-    document.addEventListener("DOMContentLoaded", () => {
-        document.querySelectorAll("form[data-upload-token-url]").forEach(form => {
-            const uploadInputs = [...form.querySelectorAll('input[type="file"][name$="_upload"]')];
-            uploadInputs.forEach(input => setupUploadInput(input, form));
+    document.addEventListener("change", event => {
+        const input = event.target;
+        if (input && input.matches && input.matches(SELECTOR)) handleChange(input);
+    });
 
-            form.addEventListener("submit", event => {
-                const unfinished = uploadInputs.some(input =>
-                    input.dataset.uploading === "true" || (input.files && input.files.length > 0)
-                );
-                if (unfinished) {
-                    event.preventDefault();
-                    window.alert("Please wait for each media upload to finish before saving. If an upload failed, select the file again and retry.");
-                }
-            });
+    // Block saving while an upload is running; never let a raw file ride along with the form.
+    document.addEventListener("submit", event => {
+        const form = event.target;
+        if (!form || !form.querySelectorAll) return;
+        const inputs = [...form.querySelectorAll(SELECTOR)];
+        if (inputs.some(i => i.dataset.uploading === "true")) {
+            event.preventDefault();
+            window.alert("Please wait for the upload to finish, then save.");
+        }
+    }, true);
+
+    // Forms that only contain direct-upload file boxes never need multipart encoding.
+    document.addEventListener("DOMContentLoaded", () => {
+        document.querySelectorAll("form").forEach(form => {
+            const files = [...form.querySelectorAll('input[type="file"]')];
+            if (files.length && files.every(f => f.matches(SELECTOR))) {
+                form.enctype = "application/x-www-form-urlencoded";
+            }
         });
     });
 })();

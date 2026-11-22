@@ -118,9 +118,8 @@ else:
         }
     }
 
-dj_database_url.parse(DATABASE_URL, conn_max_age=60, ssl_require=True)
-# and add:
-DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
+if DATABASE_URL:
+    DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
 
 # Recommended when using Supabase's transaction pooler
 DISABLE_SERVER_SIDE_CURSORS = True
@@ -203,6 +202,9 @@ STAGING_PASSWORD = os.environ.get("STAGING_PASSWORD", "")
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
 STATIC_URL = 'static/'
+# Lets WhiteNoise serve /static/ straight from your app/static folders, so the logo, menu script
+# and admin uploader still load when DEBUG is False and collectstatic has not been run (local testing).
+WHITENOISE_USE_FINDERS = True
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles" 
 

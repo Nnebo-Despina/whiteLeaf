@@ -8,7 +8,7 @@
   {% if sec.mode == "text" %}<p class="text-sm text-[#8a8171] mt-1">Wrap a word in *stars* where the page shows a gold or bold highlight.</p>{% endif %}
 </div>
 
-<form method="post" enctype="multipart/form-data" class="grid gap-5" data-upload-token-url="{% url 'cms:media_upload_token' %}">
+<form method="post" class="grid gap-5" data-upload-token-url="{% url 'cms:media_upload_token' %}">
   {% csrf_token %}
   <div class="bg-white rounded-3xl p-4 sm:p-6">
     {% if form.non_field_errors %}<p class="text-xs text-[#b3573a] mb-3">{{ form.non_field_errors }}</p>{% endif %}

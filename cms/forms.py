@@ -87,6 +87,7 @@ class DirectUploadModelForm(StyledModelForm):
                     "accept": accept,
                     "data-media-kind": kind,
                     "data-max-bytes": str(max_bytes),
+                    "data-upload-target": f"{self._meta.model._meta.label_lower}.{field_name}",
                 }),
             )
             self.direct_upload_fields.append(field_name)
