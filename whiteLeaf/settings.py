@@ -147,6 +147,19 @@ AUTH_PASSWORD_VALIDATORS = [
 
 SUPABASE_S3_KEY_ID = os.environ.get("SUPABASE_S3_KEY_ID")
 
+# Work out where media lives from the public URL the site already uses to *read* files, so new uploads
+# are written to exactly the place that URL points at.
+#   https://<ref>.supabase.co/storage/v1/object/public/<bucket>/<folder inside the bucket>
+import re as _re
+
+_media_domain = os.environ.get("SUPABASE_PUBLIC_MEDIA_DOMAIN", "")
+_m = _re.search(r"/object/public/([^/]+)/?(.*)$", _media_domain)
+SUPABASE_MEDIA_BUCKET = os.environ.get("SUPABASE_MEDIA_BUCKET") or (_m.group(1) if _m else "media")
+SUPABASE_MEDIA_PREFIX = os.environ.get("SUPABASE_MEDIA_PREFIX")
+if SUPABASE_MEDIA_PREFIX is None:
+    SUPABASE_MEDIA_PREFIX = _m.group(2) if _m else ""
+SUPABASE_MEDIA_PREFIX = SUPABASE_MEDIA_PREFIX.strip("/")
+
 STORAGES = {
     "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
@@ -158,9 +171,10 @@ STORAGES = {
 
 if SUPABASE_S3_KEY_ID:
     STORAGES["default"] = {
-        "BACKEND": "storages.backends.s3.S3Storage",
+        "BACKEND": "core.storage.SupabaseMediaStorage",
         "OPTIONS": {
-            "bucket_name": "media",
+            "bucket_name": SUPABASE_MEDIA_BUCKET,
+            "location": SUPABASE_MEDIA_PREFIX,
             "endpoint_url": os.environ["SUPABASE_S3_ENDPOINT"],
             "access_key": SUPABASE_S3_KEY_ID,
             "secret_key": os.environ["SUPABASE_S3_SECRET"],
@@ -194,7 +208,6 @@ SUPABASE_URL = _clean_supabase_url(os.environ.get("SUPABASE_URL", ""))
 SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
 SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY", "")
 
-SUPABASE_MEDIA_BUCKET = "media"
 
 # Maximum video size: 500 MB
 ROOM_VIDEO_MAX_SIZE = 500 * 1024 * 1024

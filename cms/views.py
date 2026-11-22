@@ -117,9 +117,11 @@ def create_media_upload_token(request):
         limit_mb = max_bytes // (1024 * 1024)
         return JsonResponse({"error": f"File must be between 1 byte and {limit_mb} MB."}, status=400)
 
-    object_path = f"{folder}/{uuid.uuid4().hex}{extension}"
+    object_path = f"{folder}/{uuid.uuid4().hex}{extension}"  # what the database stores
+    prefix = getattr(settings, "SUPABASE_MEDIA_PREFIX", "").strip("/")
+    storage_key = f"{prefix}/{object_path}" if prefix else object_path  # where the file really goes in the bucket
     encoded_bucket = urllib.parse.quote(bucket, safe="")
-    encoded_path = urllib.parse.quote(object_path, safe="/")
+    encoded_path = urllib.parse.quote(storage_key, safe="/")
     sign_url = f"{supabase_url}/storage/v1/object/upload/sign/{encoded_bucket}/{encoded_path}"
     sign_request = urllib.request.Request(
         sign_url,
