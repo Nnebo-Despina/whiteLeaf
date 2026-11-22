@@ -103,3 +103,18 @@ def robots_txt(request):
         f"Sitemap: {request.scheme}://{request.get_host()}{reverse('django.contrib.sitemaps.views.sitemap')}",
     ]
     return HttpResponse("\n".join(lines) + "\n", content_type="text/plain")
+
+
+def custom_404(request, exception):
+    context = {
+        "nav_overlay": False,
+        # same nav_links structure your other views pass, with active=False for all
+        "nav_links": [
+            ("home", "Home", "home", False),
+            ("accommodations", "Accommodations", "rooms:list", False),
+            ("tariffs", "Tariffs", "tariffs", False),
+            ("about", "About", "about", False),
+            ("contact", "Contact", "contact", False),
+        ],
+    }
+    return render(request, "404.html", context, status=404)

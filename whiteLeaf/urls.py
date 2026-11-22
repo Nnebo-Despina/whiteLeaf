@@ -34,7 +34,10 @@ urlpatterns = [
     path("sitemap.xml", sitemap, {"sitemaps": sitemaps}, name="django.contrib.sitemaps.views.sitemap"),
     path("robots.txt", robots_txt, name="robots"),
     path("favicon.ico", RedirectView.as_view(url=static_url("images/favicon.png"), permanent=True)),
+    
 ]
+
+handler404 = "core.views.custom_404"
 
 if settings.DEBUG:
     urlpatterns += media_static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
